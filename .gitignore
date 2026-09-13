@@ -1,0 +1,104 @@
+# =========================
+# Secrets / environment
+# =========================
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Keys / credentials
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+serviceAccount*.json
+google-services.json
+
+# =========================
+# Node / NestJS
+# =========================
+**/node_modules/
+**/dist/
+**/coverage/
+**/.nestjs/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+**/*.tsbuildinfo
+
+# Runtime / uploads / local data
+**/uploads/
+**/logs/
+**/*.log
+backups/
+*.sql.gz
+*.dump
+
+# =========================
+# Android / Gradle
+# =========================
+**/.gradle/
+**/build/
+.gradle/
+**/local.properties
+*.iml
+*.apk
+*.aab
+*.apks
+*.hprof
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Android Studio / IntelliJ
+.idea/
+*.iws
+*.ipr
+*.ids
+*.class
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.example.json
+
+# =========================
+# Docker local/runtime files
+# =========================
+**/.docker/
+**/docker-data/
+*.pid
+
+# =========================
+# OS / temporary files
+# =========================
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# =========================
+# Archives / generated exports
+# =========================
+*.zip
+*.7z
+*.tar
+*.tar.gz
+*.rar
+
+# =========================
+# Local tooling
+# =========================
+*.bak
+*.orig

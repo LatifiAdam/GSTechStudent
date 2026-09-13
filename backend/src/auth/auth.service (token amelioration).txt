@@ -1,0 +1,57 @@
+J'ajouterais simplement un commentaire dans la documentation indiquant que la rotation des Refresh Tokens est une amélioration possible pour une version de production : 
+
+
+
+async refresh(refreshToken: string) {
+  if (this.revokedRefreshTokens.has(refreshToken)) {
+    throw new UnauthorizedException('Refresh token révoqué');
+  }
+
+  try {
+    const payload = this.jwtService.verify(refreshToken);
+
+    // Invalider immédiatement l'ancien Refresh Token
+    this.revokedRefreshTokens.add(refreshToken);
+
+    const newPayload = {
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    };
+
+    const accessToken = this.jwtService.sign(newPayload, {
+      expiresIn: '15m',
+    });
+
+    const newRefreshToken = this.jwtService.sign(newPayload, {
+      expiresIn: '7d',
+    });
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
+  } catch {
+    throw new UnauthorizedException(
+      'Refresh token invalide ou expiré',
+    );
+  }
+}
+
+
+
+
+
+private readonly revokedRefreshTokens = new Set<string>();
+/**
+ * Liste noire des Refresh Tokens révoqués.
+ *
+ * Les tokens sont conservés uniquement en mémoire.
+ *
+ * Limitations :
+ * - perdus au redémarrage de l'application ;
+ * - non partagés entre plusieurs instances de l'API.
+ *
+ * Pour une application en production, utiliser Redis
+ * ou une base de données pour stocker les Refresh Tokens.
+ */

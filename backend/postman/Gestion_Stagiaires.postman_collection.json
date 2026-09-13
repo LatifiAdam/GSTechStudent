@@ -1,0 +1,1167 @@
+{
+  "info": {
+    "_postman_id": "9e1c4acc-aa25-416e-a382-d54c5e4b9806",
+    "name": "Gestion des Stagiaires — API (Phase 2)",
+    "description": "Collection générée à partir des tableaux d'endpoints du document Phase 2 - Base de données et API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "refreshToken",
+      "value": ""
+    },
+    {
+      "key": "coursId",
+      "value": ""
+    },
+    {
+      "key": "etudiantId",
+      "value": ""
+    },
+    {
+      "key": "formateurId",
+      "value": ""
+    },
+    {
+      "key": "presenceId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"prof.dupont@ecole.fr\",\n  \"password\": \"MotDePasse123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const data = pm.response.json();",
+                  "    if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Lister les utilisateurs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?role=etudiant",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users?role=etudiant"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Détail d'un utilisateur",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer un utilisateur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Dupont\",\n  \"prenom\": \"Jean\",\n  \"email\": \"jean.dupont@ecole.fr\",\n  \"password\": \"MotDePasse123\",\n  \"role\": \"etudiant\",\n  \"numeroEtudiant\": \"ET-2026-001\",\n  \"promotion\": \"Promo 2026\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Modifier un utilisateur",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Dupont-Martin\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Supprimer un utilisateur",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "item": [
+        {
+          "name": "Lister les cours",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses?formateurId=:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses?formateurId=:id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer un cours",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nomCours\": \"Développement Mobile\",\n  \"salle\": \"B203\",\n  \"horaire\": \"2026-09-01T09:00:00Z\",\n  \"idFormateur\": \"{{formateurId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Modifier un cours",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"salle\": \"B305\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Supprimer un cours",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inscrire un étudiant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/:id/stagieres",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "courses",
+                ":id",
+                "stagieres"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idEtudiant\": \"{{etudiantId}}\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Schedule (emploi du temps)",
+      "item": [
+        {
+          "name": "Consulter l'emploi du temps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/schedule?coursId=:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule?coursId=:id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Créer un créneau (admin uniquement, RG8)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jourSemaine\": \"lundi\",\n  \"heureDebut\": \"09:00\",\n  \"heureFin\": \"11:00\",\n  \"salle\": \"B203\",\n  \"idCours\": \"{{coursId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Modifier un créneau (admin uniquement, RG8)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule",
+                ":id"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"salle\": \"B305\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Supprimer un créneau (admin uniquement, RG8)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/schedule/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "schedule",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance (appels / présences)",
+      "item": [
+        {
+          "name": "Ouvrir un appel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/calls",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "calls"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idCours\": \"{{coursId}}\",\n  \"dateHeure\": \"2026-09-01T09:00:00Z\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mettre à jour les exceptions",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/calls/:id/records",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "calls",
+                ":id",
+                "records"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"records\": [\n    {\n      \"idEtudiant\": \"{{etudiantId}}\",\n      \"statut\": \"absent\"\n    }\n  ]\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Valider un appel",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/calls/:id/validate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "calls",
+                ":id",
+                "validate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Détail d'un appel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/calls/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "calls",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Historique de présence d'un étudiant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/stagieres/:id/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attendance",
+                "stagieres",
+                ":id",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Justifications",
+      "item": [
+        {
+          "name": "Déposer un justificatif",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/justifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "justifications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idPresence\": \"{{presenceId}}\",\n  \"motif\": \"Rendez-vous médical\",\n  \"pieceJointe\": \"https://.../justificatif.pdf\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lister les justificatifs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/justifications?statut=en_attente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "justifications?statut=en_attente"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accepter un justificatif",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/justifications/:id/accept",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "justifications",
+                ":id",
+                "accept"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser un justificatif",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/justifications/:id/refuse",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "justifications",
+                ":id",
+                "refuse"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif\": \"Pièce jointe illisible\"\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Document Requests (documents administratifs)",
+      "item": [
+        {
+          "name": "Soumettre une demande (RG9)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/document-requests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeDocument\": \"certificat_scolarite\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lister les demandes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/document-requests?statut=en_attente",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-requests?statut=en_attente"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Générer le document (RG10)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/document-requests/:id/generate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-requests",
+                ":id",
+                "generate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refuser la demande (RG10)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/document-requests/:id/refuse",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-requests",
+                ":id",
+                "refuse"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"motif\": \"Dossier incomplet\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Télécharger le fichier généré",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/document-requests/:id/file",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "document-requests",
+                ":id",
+                "file"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Announcements (annonces)",
+      "item": [
+        {
+          "name": "Lister les annonces",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "announcements"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Publier une annonce (RG11, RG12)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/announcements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "announcements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titre\": \"Examen final\",\n  \"contenu\": \"L'examen aura lieu le 15/09.\",\n  \"typeAnnonce\": \"examen\",\n  \"dateEvenement\": \"2026-09-15T09:00:00Z\",\n  \"idCours\": \"{{coursId}}\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retirer une annonce",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/announcements/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "announcements",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Lister mes notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Marquer comme lue",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:id/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                ":id",
+                "read"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enregistrer le token FCM de l'appareil",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/device-tokens",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "device-tokens"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"fcm-device-token-exemple\",\n  \"plateforme\": \"android\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retirer un token FCM",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/device-tokens/fcm-device-token-exemple",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "device-tokens",
+                "fcm-device-token-exemple"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports (rapports et statistiques)",
+      "item": [
+        {
+          "name": "Statistiques de présence/absence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/attendance?periode=2026-09",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "attendance?periode=2026-09"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rapport d'un cours",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/courses/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "courses",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rapport d'un étudiant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/stagieres/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "stagieres",
+                ":id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Exporter un rapport (PDF/Excel)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/export?format=pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reports",
+                "export?format=pdf"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
