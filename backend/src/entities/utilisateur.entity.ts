@@ -102,6 +102,14 @@ export class Utilisateur {
   adresse: string | null;
 
   @Column({
+    name: 'profile_image_key',
+    type: 'varchar',
+    length: 512,
+    nullable: true,
+  })
+  profileImageKey: string | null;
+
+  @Column({
     name: 'two_factor_enabled',
     type: 'boolean',
     default: false,

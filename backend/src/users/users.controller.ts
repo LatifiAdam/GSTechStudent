@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors, BadRequestException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -7,6 +7,9 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Role } from '../common/enums/roles.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
+import { Response } from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ToggleTwoFactorDto } from './dto/toggle-two-factor.dto';
 
@@ -37,6 +40,17 @@ export class UsersController {
 
   // GET /users/:id — Consulte le détail d'un utilisateur
   // Rôle(s) autorisé(s) : Administrateur, propriétaire
+  @Get('me/profile-image')
+  async getMyProfileImage(@Req() req: any, @Res() res: Response) {
+    const result = await this.service.getProfileImage(req.user.userId);
+    res.set({
+      'Content-Type': result.contentType,
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'private, max-age=3600',
+    });
+    res.send(result.buffer);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string, @Req() req: any) {
     if (req.user.role === Role.FORMATEUR && req.user.userId !== id) {
@@ -117,4 +131,32 @@ export class UsersController {
     }
     return this.service.remove(id, req.user.role, req.user.userId);
   }
+
+  @Post('me/profile-image')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 },
+  }))
+  async uploadProfileImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    return this.service.updateProfileImage(req.user.userId, file);
+  }
+
+
+  @Get(':id/profile-image')
+  async getProfileImage(@Param('id') id: string, @Req() req: any, @Res() res: Response) {
+    if (req.user.userId !== id && ![Role.SUPER_ADMIN, Role.DF].includes(req.user.role as Role)) {
+      throw new ForbiddenException('Accès non autorisé à cette photo de profil');
+    }
+    const result = await this.service.getProfileImage(id);
+    res.set({
+      'Content-Type': result.contentType,
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'private, max-age=3600',
+    });
+    res.send(result.buffer);
+  }
+
 }

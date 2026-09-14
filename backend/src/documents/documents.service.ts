@@ -44,7 +44,7 @@ export class DocumentsService {
     if (!etab?.idDirecteur) throw new BadRequestException('Aucun Directeur n’est affecté à cet établissement');
     const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filename = `${Date.now()}-${safe}`;
-    const stored = await this.storage.save('documents', filename, file.buffer);
+    const stored = await this.storage.save('documents', filename, file.buffer, 'application/pdf');
     return this.repo.save(this.repo.create({
       nomDocument: nomDocument?.trim() || file.originalname,
       typeDocument: 'pdf',

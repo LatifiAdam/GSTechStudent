@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CommonModule } from '../common/common.module';
 import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { Utilisateur } from '../entities/utilisateur.entity';
@@ -12,7 +13,7 @@ import { Etablissement } from '../entities/etablissement.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Utilisateur, Formateur, stagiaire, Administrateur, Directeur, Gestionnaire, Etablissement, AuditLog])],
+  imports: [TypeOrmModule.forFeature([Utilisateur, Formateur, stagiaire, Administrateur, Directeur, Gestionnaire, Etablissement, AuditLog]), CommonModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],
