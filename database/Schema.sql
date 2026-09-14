@@ -59,20 +59,20 @@ DROP TABLE IF EXISTS region;
 -- ============================================================
 
 CREATE TABLE region (
-    region VARCHAR(30) NOT NULL,
+    region VARCHAR(30) PRIMARY KEY,
+
+    code VARCHAR(30) NOT NULL UNIQUE,
 
     nom VARCHAR(150) NOT NULL UNIQUE,
 
     actif BOOLEAN NOT NULL DEFAULT TRUE,
 
-    date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (region)
+    date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4;
 
-INSERT INTO region (region, nom) VALUES
+INSERT INTO region (code, nom) VALUES
 ('RSK', 'Rabat-Salé-Kénitra'),
 ('CS',  'Casablanca-Settat'),
 ('TTA', 'Tanger-Tétouan-Al Hoceïma'),
@@ -1349,7 +1349,7 @@ CREATE TABLE audit_log (
 
     entity_id CHAR(36) NULL,
 
-    region VARCHAR(120) NULL,
+    region VARCHAR(30) NULL,
 
     id_etablissement CHAR(36) NULL,
 
@@ -1791,3 +1791,10 @@ SELECT
 SELECT
     COUNT(*) AS nombre_regions
 FROM region;
+-- Migration for existing databases: allow optional student profile fields.
+-- Execute these statements once on an already-created database if the columns
+-- are still NOT NULL there.
+ALTER TABLE stagiaire
+    MODIFY numero_stagiaire VARCHAR(30) NULL UNIQUE,
+    MODIFY promotion VARCHAR(50) NULL,
+    MODIFY id_etablissement CHAR(36) NULL;
