@@ -1,8 +1,12 @@
 node_modules
+npm-debug.log*
 dist
+coverage
 .git
+.gitignore
 .env
 .env.*
-npm-debug.log
-coverage
+uploads
 *.log
+Dockerfile
+Dockerfile.*
