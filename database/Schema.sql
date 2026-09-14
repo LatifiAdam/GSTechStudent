@@ -1,59 +1,11 @@
 
-CREATE DATABASE IF NOT EXISTS gestion_stagiaires
+CREATE DATABASE gestion_stagiaires
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 USE gestion_stagiaires;
 
 SET FOREIGN_KEY_CHECKS = 0;
-
--- ============================================================
--- SUPPRESSION DES TABLES EXISTANTES
--- ============================================================
-
-DROP VIEW IF EXISTS v_attendance_details;
-DROP VIEW IF EXISTS v_formateur_home;
-DROP VIEW IF EXISTS v_student_attendance_summary;
-DROP VIEW IF EXISTS v_formateur_course_student_count;
-DROP VIEW IF EXISTS v_course_student_count;
-DROP VIEW IF EXISTS v_formateur_schedule;
-DROP VIEW IF EXISTS v_student_schedule;
-DROP VIEW IF EXISTS v_schedule;
-
-DROP TABLE IF EXISTS audit_log;
-DROP TABLE IF EXISTS role_permission;
-DROP TABLE IF EXISTS permission;
-
-DROP TABLE IF EXISTS device_token;
-DROP TABLE IF EXISTS note;
-DROP TABLE IF EXISTS annonce;
-DROP TABLE IF EXISTS demande_document;
-DROP TABLE IF EXISTS document;
-DROP TABLE IF EXISTS notification;
-
-DROP TABLE IF EXISTS justification;
-DROP TABLE IF EXISTS presence;
-DROP TABLE IF EXISTS appel;
-
-DROP TABLE IF EXISTS creneau;
-DROP TABLE IF EXISTS affectation;
-DROP TABLE IF EXISTS cours;
-
-DROP TABLE IF EXISTS stagiaire;
-DROP TABLE IF EXISTS classe;
-DROP TABLE IF EXISTS formateur;
-DROP TABLE IF EXISTS gestionnaire;
-
-DROP TABLE IF EXISTS directeur;
-DROP TABLE IF EXISTS scq;
-DROP TABLE IF EXISTS srio;
-DROP TABLE IF EXISTS administrateur;
-
-DROP TABLE IF EXISTS etablissement;
-DROP TABLE IF EXISTS annee_formation;
-DROP TABLE IF EXISTS utilisateur;
-DROP TABLE IF EXISTS region;
-
 -- ============================================================
 -- REGIONS
 -- ============================================================
