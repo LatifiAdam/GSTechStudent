@@ -216,11 +216,11 @@ export class FileStorageService implements OnModuleInit {
     };
 
     return fetch(url, {
-  method,
-  headers: requestHeaders,
-  body: ['GET', 'HEAD', 'DELETE'].includes(method)
-    ? undefined
-    : (payload as unknown as BodyInit),
-});
+      method,
+      headers: requestHeaders,
+      body: ['GET', 'HEAD', 'DELETE'].includes(method)
+        ? undefined
+        : (payload as unknown as BodyInit),
+    });
   }
 }

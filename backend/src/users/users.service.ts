@@ -406,9 +406,33 @@ export class UsersService {
           throw new BadRequestException('Un Directeur peut uniquement créer un Gestionnaire, un Formateur ou un Étudiant');
         }
         if ([Role.SRIO, Role.SCQ].includes(dto.role)) {
-          if (!dto.region) throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
-          const existingRegional = await manager.findOne(Utilisateur, { where: { role: dto.role, region: dto.region, isActive: true } });
-          if (existingRegional) throw new BadRequestException(`Un ${dto.role.toUpperCase()} existe déjà pour cette région`);
+          if (!dto.region) {
+            throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
+          }
+
+          // The database stores the canonical region code (RSK, CS, TTA, ...).
+          // Accept both the code and the official French region name from clients,
+          // then always persist the code. This prevents FK failures when the
+          // Android form sends a display name such as "Rabat-Salé-Kénitra".
+          const requestedRegion = dto.region.trim();
+          const regionRow = await manager.query(
+            `SELECT region FROM region WHERE region = ? OR nom = ? LIMIT 1`,
+            [requestedRegion, requestedRegion],
+          );
+
+          if (!regionRow?.length) {
+            throw new BadRequestException('Région invalide. Sélectionnez une des dix régions officielles.');
+          }
+
+          dto.region = regionRow[0].region;
+
+          const existingRegional = await manager.findOne(Utilisateur, {
+            where: { role: dto.role, region: dto.region, isActive: true },
+          });
+
+          if (existingRegional) {
+            throw new BadRequestException(`Un ${dto.role.toUpperCase()} existe déjà pour cette région`);
+          }
         }
 
         let targetEfp: Etablissement | null = null;
