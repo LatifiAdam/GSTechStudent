@@ -1,14 +1,13 @@
-
 CREATE DATABASE IF NOT EXISTS gestion_stagiaires
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
 
 USE gestion_stagiaires;
 
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ============================================================
--- SUPPRESSION DES TABLES EXISTANTES
+-- SUPPRESSION DES VUES
 -- ============================================================
 
 DROP VIEW IF EXISTS v_attendance_details;
@@ -20,7 +19,12 @@ DROP VIEW IF EXISTS v_formateur_schedule;
 DROP VIEW IF EXISTS v_student_schedule;
 DROP VIEW IF EXISTS v_schedule;
 
+-- ============================================================
+-- SUPPRESSION DES TABLES
+-- ============================================================
+
 DROP TABLE IF EXISTS audit_log;
+
 DROP TABLE IF EXISTS role_permission;
 DROP TABLE IF EXISTS permission;
 
@@ -56,21 +60,26 @@ DROP TABLE IF EXISTS region;
 
 -- ============================================================
 -- REGIONS
+-- La colonne "region" contient directement le code :
+-- RSK, CS, TTA, FM, M, OR, BS, D, SMD, GON
 -- ============================================================
 
 CREATE TABLE region (
     region VARCHAR(30) NOT NULL,
 
-    nom VARCHAR(150) NOT NULL UNIQUE,
+    nom VARCHAR(150) NOT NULL,
 
     actif BOOLEAN NOT NULL DEFAULT TRUE,
 
     date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    PRIMARY KEY (region)
+    PRIMARY KEY (region),
+
+    UNIQUE KEY uq_region_nom (nom)
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 INSERT INTO region (region, nom) VALUES
 ('RSK', 'Rabat-Salé-Kénitra'),
@@ -89,21 +98,25 @@ INSERT INTO region (region, nom) VALUES
 -- ============================================================
 
 CREATE TABLE annee_formation (
-    id_annee INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_annee INT UNSIGNED NOT NULL AUTO_INCREMENT,
 
-    libelle VARCHAR(20) NOT NULL UNIQUE,
+    libelle VARCHAR(20) NOT NULL,
 
     date_debut DATE NOT NULL,
-
     date_fin DATE NOT NULL,
 
     active BOOLEAN NOT NULL DEFAULT FALSE,
+
+    PRIMARY KEY (id_annee),
+
+    UNIQUE KEY uq_annee_libelle (libelle),
 
     CONSTRAINT chk_annee_dates
         CHECK (date_fin > date_debut)
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- UTILISATEURS
@@ -113,10 +126,9 @@ CREATE TABLE utilisateur (
     id_utilisateur CHAR(36) NOT NULL,
 
     nom VARCHAR(100) NOT NULL,
-
     prenom VARCHAR(100) NOT NULL,
 
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL,
 
     mot_de_passe VARCHAR(255) NOT NULL,
 
@@ -135,8 +147,6 @@ CREATE TABLE utilisateur (
 
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
 
-    -- Temporary account used only to bootstrap the first real Super Admin.
-    -- It is automatically deleted when a real Super Admin is created.
     is_bootstrap BOOLEAN NOT NULL DEFAULT FALSE,
 
     date_creation DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -145,7 +155,7 @@ CREATE TABLE utilisateur (
         DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    cin VARCHAR(20) NULL UNIQUE,
+    cin VARCHAR(20) NULL,
 
     telephone VARCHAR(30) NULL,
 
@@ -159,29 +169,41 @@ CREATE TABLE utilisateur (
 
     PRIMARY KEY (id_utilisateur),
 
+    UNIQUE KEY uq_utilisateur_email (email),
+
+    UNIQUE KEY uq_utilisateur_cin (cin),
+
     KEY idx_user_region (region),
 
-    KEY idx_user_region_active (region, is_active),
+    KEY idx_user_region_active (
+        region,
+        is_active
+    ),
 
-    KEY idx_user_role_active (role, is_active),
+    KEY idx_user_role_active (
+        role,
+        is_active
+    ),
 
     CONSTRAINT fk_utilisateur_region
         FOREIGN KEY (region)
         REFERENCES region(region)
         ON DELETE SET NULL
+        ON UPDATE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- SUPER ADMIN
--- Maintenance technique uniquement
 -- ============================================================
 
 CREATE TABLE administrateur (
     id_utilisateur CHAR(36) NOT NULL,
 
-    niveau_acces VARCHAR(30) NOT NULL DEFAULT 'technical',
+    niveau_acces VARCHAR(30) NOT NULL
+        DEFAULT 'technical',
 
     PRIMARY KEY (id_utilisateur),
 
@@ -191,11 +213,12 @@ CREATE TABLE administrateur (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- SRIO
--- 1 SRIO maximum par région
+-- Un seul SRIO par région
 -- ============================================================
 
 CREATE TABLE srio (
@@ -218,13 +241,15 @@ CREATE TABLE srio (
         FOREIGN KEY (region)
         REFERENCES region(region)
         ON DELETE RESTRICT
+        ON UPDATE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- SCQ
--- 1 SCQ maximum par région
+-- Un seul SCQ par région
 -- ============================================================
 
 CREATE TABLE scq (
@@ -247,9 +272,11 @@ CREATE TABLE scq (
         FOREIGN KEY (region)
         REFERENCES region(region)
         ON DELETE RESTRICT
+        ON UPDATE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- DIRECTEURS
@@ -266,20 +293,22 @@ CREATE TABLE directeur (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- ETABLISSEMENTS / EFP
+-- Un seul Directeur par établissement
 -- ============================================================
 
 CREATE TABLE etablissement (
-    id_etablissement CHAR(36) NULL,
+    id_etablissement CHAR(36) NOT NULL,
 
     nom_etablissement VARCHAR(200) NOT NULL,
 
     region VARCHAR(30) NOT NULL,
 
-    id_directeur CHAR(36) NULL UNIQUE,
+    id_directeur CHAR(36) NULL,
 
     actif BOOLEAN NOT NULL DEFAULT TRUE,
 
@@ -296,14 +325,17 @@ CREATE TABLE etablissement (
         nom_etablissement
     ),
 
-    KEY idx_etab_region (
-        region
+    UNIQUE KEY uq_etab_directeur (
+        id_directeur
     ),
+
+    KEY idx_etab_region (region),
 
     CONSTRAINT fk_etablissement_region
         FOREIGN KEY (region)
         REFERENCES region(region)
-        ON DELETE RESTRICT,
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
 
     CONSTRAINT fk_etablissement_directeur
         FOREIGN KEY (id_directeur)
@@ -311,7 +343,8 @@ CREATE TABLE etablissement (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- GESTIONNAIRES / GS
@@ -339,7 +372,8 @@ CREATE TABLE gestionnaire (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- FORMATEURS
@@ -369,11 +403,11 @@ CREATE TABLE formateur (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- GROUPES / CLASSES
--- Créés et gérés par le GS
 -- ============================================================
 
 CREATE TABLE classe (
@@ -421,7 +455,8 @@ CREATE TABLE classe (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- STAGIAIRES
@@ -430,7 +465,7 @@ DEFAULT CHARSET = utf8mb4;
 CREATE TABLE stagiaire (
     id_utilisateur CHAR(36) NOT NULL,
 
-    numero_stagiaire VARCHAR(30) NULL UNIQUE,
+    numero_stagiaire VARCHAR(30) NULL,
 
     promotion VARCHAR(50) NULL,
 
@@ -439,6 +474,10 @@ CREATE TABLE stagiaire (
     id_classe CHAR(36) NULL,
 
     PRIMARY KEY (id_utilisateur),
+
+    UNIQUE KEY uq_numero_stagiaire (
+        numero_stagiaire
+    ),
 
     KEY idx_stagiaire_etab (
         id_etablissement
@@ -464,7 +503,8 @@ CREATE TABLE stagiaire (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- MODULES / COURS
@@ -510,12 +550,12 @@ CREATE TABLE cours (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
--- AFFECTATION
--- Directeur affecte le Formateur à un groupe/module
--- Le groupe est créé par le GS
+-- AFFECTATIONS
+-- Groupe + Module + Formateur
 -- ============================================================
 
 CREATE TABLE affectation (
@@ -577,11 +617,11 @@ CREATE TABLE affectation (
         )
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- CRENEAUX / EMPLOI DU TEMPS
--- Créés par le Directeur
 -- ============================================================
 
 CREATE TABLE creneau (
@@ -638,10 +678,11 @@ CREATE TABLE creneau (
         )
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
--- PRESENCES / ABSENCES
+-- APPELS
 -- ============================================================
 
 CREATE TABLE appel (
@@ -676,8 +717,11 @@ CREATE TABLE appel (
         ON DELETE RESTRICT
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
+-- ============================================================
+-- PRESENCES
 -- ============================================================
 
 CREATE TABLE presence (
@@ -715,8 +759,11 @@ CREATE TABLE presence (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
+-- ============================================================
+-- JUSTIFICATIONS
 -- ============================================================
 
 CREATE TABLE justification (
@@ -734,9 +781,13 @@ CREATE TABLE justification (
 
     date_envoi DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    id_presence CHAR(36) NOT NULL UNIQUE,
+    id_presence CHAR(36) NOT NULL,
 
     PRIMARY KEY (id_justification),
+
+    UNIQUE KEY uq_justification_presence (
+        id_presence
+    ),
 
     CONSTRAINT fk_justification_presence
         FOREIGN KEY (id_presence)
@@ -744,7 +795,8 @@ CREATE TABLE justification (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- NOTIFICATIONS
@@ -775,7 +827,8 @@ CREATE TABLE notification (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- DOCUMENTS
@@ -827,7 +880,8 @@ CREATE TABLE document (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- DEMANDES DE DOCUMENTS
@@ -876,8 +930,16 @@ CREATE TABLE demande_document (
         id_gestionnaire
     ),
 
-    KEY idx_demande_etab (
+    KEY idx_demande_etablissement (
         id_etablissement
+    ),
+
+    KEY idx_demande_document (
+        id_document
+    ),
+
+    KEY idx_demande_administrateur (
+        id_administrateur
     ),
 
     CONSTRAINT fk_demande_stagiaire
@@ -906,7 +968,8 @@ CREATE TABLE demande_document (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- ANNONCES
@@ -965,7 +1028,8 @@ CREATE TABLE annonce (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- NOTES
@@ -1034,7 +1098,8 @@ CREATE TABLE note (
         )
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- DEVICE TOKENS
@@ -1043,7 +1108,7 @@ DEFAULT CHARSET = utf8mb4;
 CREATE TABLE device_token (
     id_device_token CHAR(36) NOT NULL,
 
-    token VARCHAR(255) NOT NULL UNIQUE,
+    token VARCHAR(255) NOT NULL,
 
     plateforme ENUM(
         'ios',
@@ -1060,6 +1125,10 @@ CREATE TABLE device_token (
 
     PRIMARY KEY (id_device_token),
 
+    UNIQUE KEY uq_device_token (
+        token
+    ),
+
     KEY idx_device_user (
         id_utilisateur
     ),
@@ -1070,21 +1139,29 @@ CREATE TABLE device_token (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- PERMISSIONS
 -- ============================================================
 
 CREATE TABLE permission (
-    id_permission INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_permission INT UNSIGNED NOT NULL AUTO_INCREMENT,
 
-    code VARCHAR(80) NOT NULL UNIQUE,
+    code VARCHAR(80) NOT NULL,
 
-    description VARCHAR(255) NOT NULL
+    description VARCHAR(255) NOT NULL,
+
+    PRIMARY KEY (id_permission),
+
+    UNIQUE KEY uq_permission_code (
+        code
+    )
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- ROLE / PERMISSION
@@ -1115,13 +1192,17 @@ CREATE TABLE role_permission (
         ON DELETE CASCADE
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- PERMISSIONS DISPONIBLES
 -- ============================================================
 
-INSERT INTO permission (code, description) VALUES
+INSERT INTO permission (
+    code,
+    description
+) VALUES
 
 (
     'TECHNICAL_MAINTENANCE',
@@ -1165,7 +1246,7 @@ INSERT INTO permission (code, description) VALUES
 
 (
     'MANAGE_SCHEDULE',
-    'Créer et gérer l emploi du temps de son EFP'
+    'Créer et gérer emploi du temps de son EFP'
 ),
 
 (
@@ -1200,47 +1281,45 @@ INSERT INTO permission (code, description) VALUES
 
 -- ============================================================
 -- SUPER ADMIN
--- Technique uniquement
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'superadmin',
     id_permission
-
 FROM permission
-
 WHERE code = 'TECHNICAL_MAINTENANCE';
 
 -- ============================================================
 -- DF
 -- Tous les droits fonctionnels
--- PAS de maintenance technique
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'df',
     id_permission
-
 FROM permission
-
 WHERE code <> 'TECHNICAL_MAINTENANCE';
 
 -- ============================================================
 -- SRIO
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'srio',
     id_permission
-
 FROM permission
-
 WHERE code IN (
     'MANAGE_REGIONAL_GS',
     'VIEW_REGIONAL_DATA'
@@ -1250,14 +1329,14 @@ WHERE code IN (
 -- SCQ
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'scq',
     id_permission
-
 FROM permission
-
 WHERE code IN (
     'MANAGE_REGIONAL_DIRECTEURS',
     'VIEW_REGIONAL_DATA'
@@ -1267,14 +1346,14 @@ WHERE code IN (
 -- DIRECTEUR
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'directeur',
     id_permission
-
 FROM permission
-
 WHERE code IN (
     'MANAGE_FORMATEURS',
     'MANAGE_MODULES',
@@ -1287,14 +1366,14 @@ WHERE code IN (
 -- GESTIONNAIRE / GS
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'gestionnaire',
     id_permission
-
 FROM permission
-
 WHERE code IN (
     'MANAGE_GROUPS',
     'MANAGE_STAGIAIRES',
@@ -1305,14 +1384,14 @@ WHERE code IN (
 -- FORMATEUR
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'formateur',
     id_permission
-
 FROM permission
-
 WHERE code IN (
     'VIEW_EFP_DATA',
     'VIEW_OWN_DATA'
@@ -1322,14 +1401,14 @@ WHERE code IN (
 -- STAGIAIRE
 -- ============================================================
 
-INSERT INTO role_permission (role, id_permission)
-
+INSERT INTO role_permission (
+    role,
+    id_permission
+)
 SELECT
     'stagiaire',
     id_permission
-
 FROM permission
-
 WHERE code = 'VIEW_OWN_DATA';
 
 -- ============================================================
@@ -1349,7 +1428,7 @@ CREATE TABLE audit_log (
 
     entity_id CHAR(36) NULL,
 
-    region VARCHAR(120) NULL,
+    region VARCHAR(30) NULL,
 
     id_etablissement CHAR(36) NULL,
 
@@ -1387,7 +1466,8 @@ CREATE TABLE audit_log (
     CONSTRAINT fk_audit_region
         FOREIGN KEY (region)
         REFERENCES region(region)
-        ON DELETE SET NULL,
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
 
     CONSTRAINT fk_audit_etablissement
         FOREIGN KEY (id_etablissement)
@@ -1395,16 +1475,15 @@ CREATE TABLE audit_log (
         ON DELETE SET NULL
 )
 ENGINE = InnoDB
-DEFAULT CHARSET = utf8mb4;
+DEFAULT CHARSET = utf8mb4
+COLLATE = utf8mb4_unicode_ci;
 
 -- ============================================================
 -- VUE : EMPLOI DU TEMPS
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_schedule AS
-
 SELECT
-
     cr.id_creneau,
 
     cr.jour_semaine,
@@ -1439,19 +1518,19 @@ SELECT
 
 FROM creneau cr
 
-JOIN affectation af
+INNER JOIN affectation af
     ON cr.id_affectation = af.id_affectation
 
-JOIN classe cl
+INNER JOIN classe cl
     ON af.id_classe = cl.id_classe
 
-JOIN cours co
+INNER JOIN cours co
     ON af.id_cours = co.id_cours
 
-JOIN formateur f
+INNER JOIN formateur f
     ON af.id_formateur = f.id_utilisateur
 
-JOIN utilisateur u
+INNER JOIN utilisateur u
     ON f.id_utilisateur = u.id_utilisateur;
 
 -- ============================================================
@@ -1459,9 +1538,7 @@ JOIN utilisateur u
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_student_schedule AS
-
 SELECT
-
     s.id_utilisateur AS id_stagiaire,
 
     s.id_classe,
@@ -1490,22 +1567,22 @@ SELECT
 
 FROM stagiaire s
 
-JOIN classe cl
+INNER JOIN classe cl
     ON s.id_classe = cl.id_classe
 
-JOIN affectation af
+INNER JOIN affectation af
     ON af.id_classe = cl.id_classe
 
-JOIN creneau cr
+INNER JOIN creneau cr
     ON cr.id_affectation = af.id_affectation
 
-JOIN cours co
+INNER JOIN cours co
     ON co.id_cours = af.id_cours
 
-JOIN formateur f
+INNER JOIN formateur f
     ON f.id_utilisateur = af.id_formateur
 
-JOIN utilisateur u
+INNER JOIN utilisateur u
     ON u.id_utilisateur = f.id_utilisateur;
 
 -- ============================================================
@@ -1513,9 +1590,7 @@ JOIN utilisateur u
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_formateur_schedule AS
-
 SELECT
-
     af.id_formateur,
 
     af.id_affectation,
@@ -1542,23 +1617,21 @@ SELECT
 
 FROM affectation af
 
-JOIN creneau cr
+INNER JOIN creneau cr
     ON cr.id_affectation = af.id_affectation
 
-JOIN classe cl
+INNER JOIN classe cl
     ON cl.id_classe = af.id_classe
 
-JOIN cours co
+INNER JOIN cours co
     ON co.id_cours = af.id_cours;
 
 -- ============================================================
--- VUE : NOMBRE DE STAGIAIRES PAR COURS/GROUPE
+-- VUE : NOMBRE DE STAGIAIRES PAR COURS / GROUPE
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_course_student_count AS
-
 SELECT
-
     af.id_cours,
 
     co.nom_cours,
@@ -1571,17 +1644,16 @@ SELECT
 
 FROM affectation af
 
-JOIN cours co
+INNER JOIN cours co
     ON af.id_cours = co.id_cours
 
-JOIN classe cl
+INNER JOIN classe cl
     ON af.id_classe = cl.id_classe
 
 LEFT JOIN stagiaire s
     ON s.id_classe = af.id_classe
 
 GROUP BY
-
     af.id_cours,
     co.nom_cours,
     af.id_classe,
@@ -1592,9 +1664,7 @@ GROUP BY
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_formateur_course_student_count AS
-
 SELECT
-
     af.id_formateur,
 
     af.id_cours,
@@ -1609,17 +1679,16 @@ SELECT
 
 FROM affectation af
 
-JOIN cours co
+INNER JOIN cours co
     ON af.id_cours = co.id_cours
 
-JOIN classe cl
+INNER JOIN classe cl
     ON af.id_classe = cl.id_classe
 
 LEFT JOIN stagiaire s
     ON s.id_classe = af.id_classe
 
 GROUP BY
-
     af.id_formateur,
     af.id_cours,
     co.nom_cours,
@@ -1627,13 +1696,11 @@ GROUP BY
     cl.nom_classe;
 
 -- ============================================================
--- VUE : PRESENCE STAGIAIRE
+-- VUE : RESUME PRESENCES STAGIAIRE
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_student_attendance_summary AS
-
 SELECT
-
     p.id_stagiaire,
 
     COUNT(p.id_presence) AS total_classes,
@@ -1660,9 +1727,7 @@ GROUP BY p.id_stagiaire;
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_formateur_home AS
-
 SELECT
-
     af.id_formateur,
 
     af.id_affectation,
@@ -1679,17 +1744,16 @@ SELECT
 
 FROM affectation af
 
-JOIN cours co
+INNER JOIN cours co
     ON af.id_cours = co.id_cours
 
-JOIN classe cl
+INNER JOIN classe cl
     ON af.id_classe = cl.id_classe
 
 LEFT JOIN stagiaire s
     ON s.id_classe = af.id_classe
 
 GROUP BY
-
     af.id_formateur,
     af.id_affectation,
     af.id_cours,
@@ -1702,9 +1766,7 @@ GROUP BY
 -- ============================================================
 
 CREATE OR REPLACE VIEW v_attendance_details AS
-
 SELECT
-
     a.id_appel,
 
     a.date_heure,
@@ -1751,28 +1813,28 @@ SELECT
 
 FROM appel a
 
-JOIN creneau cr
+INNER JOIN creneau cr
     ON a.id_creneau = cr.id_creneau
 
-JOIN affectation af
+INNER JOIN affectation af
     ON cr.id_affectation = af.id_affectation
 
-JOIN classe cl
+INNER JOIN classe cl
     ON af.id_classe = cl.id_classe
 
-JOIN cours co
+INNER JOIN cours co
     ON af.id_cours = co.id_cours
 
-JOIN presence p
+INNER JOIN presence p
     ON p.id_appel = a.id_appel
 
-JOIN stagiaire s
+INNER JOIN stagiaire s
     ON p.id_stagiaire = s.id_utilisateur
 
-JOIN utilisateur u
+INNER JOIN utilisateur u
     ON s.id_utilisateur = u.id_utilisateur
 
-JOIN etablissement e
+INNER JOIN etablissement e
     ON cl.id_etablissement = e.id_etablissement;
 
 -- ============================================================
@@ -1791,3 +1853,9 @@ SELECT
 SELECT
     COUNT(*) AS nombre_regions
 FROM region;
+
+SELECT
+    region,
+    nom
+FROM region
+ORDER BY region;

@@ -18,9 +18,9 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mysql -u root -p$$MYSQL_ROOT_PASSWORD -D $$MYSQL_DATABASE -e \"SELECT 1 FROM utilisateur LIMIT 1;\" >/dev/null 2>&1"
+          "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"
         ]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 30
       start_period: 30s
