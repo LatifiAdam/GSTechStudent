@@ -70,10 +70,10 @@ services:
     restart: unless-stopped
 
     depends_on:
-      mysql:
-        condition: service_healthy
-      object-storage:
-        condition: service_healthy
+     mysql:
+      condition: service_healthy
+    object-storage:
+      condition: service_started
 
     environment:
       NODE_ENV: production
