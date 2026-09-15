@@ -631,14 +631,12 @@ export class UsersService {
               administrateur,
             );
 
-            // The temporary bootstrap account exists only until the first
-            // permanent Super Admin has been created successfully.
-            await manager.delete(Utilisateur, {
-              role: Role.SUPER_ADMIN,
-              isBootstrap: true,
-              idUtilisateur: Not(utilisateur.idUtilisateur),
-            });
-
+            // The temporary bootstrap account is removed only AFTER the audit
+            // record is written. This is important because audit_log.actor_id
+            // references utilisateur(id_utilisateur) with ON DELETE SET NULL.
+            // If the bootstrap account were deleted first, the subsequent audit
+            // insert would fail with MySQL error 1452 when actor_id still points
+            // to the deleted bootstrap user.
             break;
           }
 
@@ -649,6 +647,17 @@ export class UsersService {
         }
 
         await manager.save(AuditLog, manager.create(AuditLog, { actorId: creatorId ?? null, actorRole: creatorRole, action: 'CREATE', entityType: 'utilisateur', entityId: utilisateur.idUtilisateur, region: dto.region ?? targetEfp?.region ?? null, idEtablissement: dto.idEtablissement ?? null, oldValue: null, newValue: { role: dto.role }, ipAddress: null }));
+
+        // After the audit row exists, remove the temporary bootstrap account.
+        // Because fk_audit_actor uses ON DELETE SET NULL, the audit record is
+        // preserved while its actor_id is safely nulled after deletion.
+        if (dto.role === Role.SUPER_ADMIN) {
+          await manager.delete(Utilisateur, {
+            role: Role.SUPER_ADMIN,
+            isBootstrap: true,
+            idUtilisateur: Not(utilisateur.idUtilisateur),
+          });
+        }
 
         return {
           ...utilisateur,
