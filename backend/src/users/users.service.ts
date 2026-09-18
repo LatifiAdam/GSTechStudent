@@ -653,7 +653,30 @@ export class UsersService {
             );
         }
 
-        await manager.save(AuditLog, manager.create(AuditLog, { actorId: creatorId ?? null, actorRole: creatorRole, action: 'CREATE', entityType: 'utilisateur', entityId: utilisateur.idUtilisateur, region: dto.region ?? targetEfp?.region ?? null, idEtablissement: dto.idEtablissement ?? null, oldValue: null, newValue: { role: dto.role }, ipAddress: null }));
+                const creator = creatorId
+          ? await manager.findOne(Utilisateur, {
+              where: { idUtilisateur: creatorId },
+            })
+          : null;
+
+        const auditActorId =
+          creator?.isBootstrap === true ? null : (creatorId ?? null);
+
+        await manager.save(
+          AuditLog,
+          manager.create(AuditLog, {
+            actorId: auditActorId,
+            actorRole: creatorRole,
+            action: 'CREATE',
+            entityType: 'utilisateur',
+            entityId: utilisateur.idUtilisateur,
+            region: dto.region ?? targetEfp?.region ?? null,
+            idEtablissement: dto.idEtablissement ?? null,
+            oldValue: null,
+            newValue: { role: dto.role },
+            ipAddress: null,
+          }),
+        );
 
         return {
           ...utilisateur,
