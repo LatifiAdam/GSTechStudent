@@ -17,6 +17,7 @@ import androidx.navigation.navArgument
 import com.gstech.student.data.AppContainer
 import com.gstech.student.ui.components.TeacherBottomBar
 import com.gstech.student.ui.shared.ChangePasswordScreen
+import com.gstech.student.ui.shared.EditProfileScreen
 import com.gstech.student.ui.teacher.*
 
 @Composable
@@ -157,8 +158,12 @@ fun TeacherRoot(
                     container = container,
 
                     onSignedOut = onSignedOut,
-
+                    onEditProfile = { navController.navigate("teacher/edit-profile") },
                 )
+            }
+
+            composable("teacher/edit-profile") {
+                EditProfileScreen(container) { navController.popBackStack() }
             }
 
             /*

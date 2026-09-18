@@ -171,15 +171,22 @@ fun StudentRoot(
                     onBack = {
                         navController.popBackStack()
                     },
-
+                    onEditProfile = {
+                        navController.navigate("student/edit-profile")
+                    },
                     onLanguage = {
                         navController.navigate(
                             Screen.Language.route
                         )
                     },
-
                     onSignOut = onSignedOut
                 )
+            }
+
+            composable("student/edit-profile") {
+                com.gstech.student.ui.shared.EditProfileScreen(container) {
+                    navController.popBackStack()
+                }
             }
 
             // =========================================================

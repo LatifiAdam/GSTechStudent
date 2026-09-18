@@ -90,7 +90,7 @@ fun ScqRoot(container: AppContainer, onSignedOut: () -> Unit) {
             composable("scq/profile") {
                 SettingsScreen(
                     { nav.popBackStack() },
-                    {},
+                    { nav.navigate("scq/edit-profile") },
                     {},
                     {
                         scope.launch {
@@ -99,6 +99,9 @@ fun ScqRoot(container: AppContainer, onSignedOut: () -> Unit) {
                         }
                     }
                 )
+            }
+            composable("scq/edit-profile") {
+                com.gstech.student.ui.shared.EditProfileScreen(container) { nav.popBackStack() }
             }
         }
     }

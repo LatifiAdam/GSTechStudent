@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.ArrowDropDown
 import kotlin.math.max
 import com.gstech.student.util.userFriendlyErrorMessage
+import com.gstech.student.util.RegionNames
 
 @Composable
 fun AddUserScreen(
@@ -203,42 +204,49 @@ fun AddUserScreen(
                 // =========================
 
                 when (role) {
-                    "srio", "scq" -> {
-                        val regions = listOf(
-                            "RSK" to "Rabat-Salé-Kénitra",
-                            "CS" to "Casablanca-Settat",
-                            "TTA" to "Tanger-Tétouan-Al Hoceïma",
-                            "FM" to "Fès-Meknès",
-                            "M" to "Marrakech-Safi",
-                            "OR" to "Oriental",
-                            "BS" to "Béni Mellal-Khénifra",
-                            "D" to "Drâa-Tafilalet",
-                            "SMD" to "Souss-Massa",
-                            "GON" to "Guelmim-Oued Noun"
-                        )
+                    "srio", "scq", "directeur" -> {
                         var regionExpanded by remember { mutableStateOf(false) }
+                        val selectedRegionName = RegionNames.options
+                            .firstOrNull { it.code == region }
+                            ?.name
+
+                        Text(
+                            if (role == "directeur") "Région" else "Région",
+                            color = GSTextPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(6.dp))
                         Box(Modifier.fillMaxWidth()) {
                             OutlinedButton(
                                 onClick = { regionExpanded = true },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(regions.firstOrNull { it.first == region }?.second ?: "Sélectionner une région")
+                                Text(selectedRegionName ?: "Sélectionner une région")
                             }
                             DropdownMenu(
                                 expanded = regionExpanded,
                                 onDismissRequest = { regionExpanded = false }
                             ) {
-                                regions.forEach { (code, name) ->
+                                RegionNames.options.forEach { option ->
                                     DropdownMenuItem(
-                                        text = { Text(name) },
-                                        onClick = { region = code; regionExpanded = false }
+                                        text = { Text(option.name) },
+                                        onClick = {
+                                            // Send the canonical backend code, never the display name.
+                                            region = option.code
+                                            regionExpanded = false
+                                        }
                                     )
                                 }
                             }
                         }
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "L'affectation à un EFP se fait ensuite depuis l'onglet EFP régional.",
+                            if (role == "directeur") {
+                                "La région est utilisée avant l'affectation du Directeur à un EFP."
+                            } else {
+                                "L'affectation à un EFP se fait ensuite depuis l'onglet EFP régional."
+                            },
                             color = GSTextSecondary,
                             fontSize = 12.sp
                         )
@@ -379,7 +387,8 @@ fun AddUserScreen(
                                 email.isNotBlank() &&
                                 password.length >= 8 &&
                                 confirmPassword == password &&
-                                (role != "stagiaire" || (numeroEtudiant.isNotBlank() && promotion.isNotBlank()))
+                                (role != "stagiaire" || (numeroEtudiant.isNotBlank() && promotion.isNotBlank())) &&
+                                (role !in setOf("srio", "scq", "directeur") || region.isNotBlank())
                 ) {
 
                     if (saving) {

@@ -29,7 +29,7 @@ import com.gstech.student.util.safeCall
 import kotlinx.coroutines.launch
 
 @Composable
-fun TeacherProfileScreen(container: AppContainer, onSignedOut: () -> Unit) {
+fun TeacherProfileScreen(container: AppContainer, onSignedOut: () -> Unit, onEditProfile: () -> Unit) {
     var state by remember { mutableStateOf<UiState<Triple<String, String, Int>>>(UiState.Loading) }
     val scope = rememberCoroutineScope()
     var showSignOutConfirm by remember { mutableStateOf(false) }
@@ -62,6 +62,15 @@ fun TeacherProfileScreen(container: AppContainer, onSignedOut: () -> Unit) {
                             Text("Dept. Computer Science", color = GSTextSecondary, fontSize = 13.sp)
                             Text("Associate Professor", color = GSBluePrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                         }
+                    }
+
+                    Spacer(Modifier.height(14.dp))
+                    Button(
+                        onClick = onEditProfile,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = GSBluePrimary),
+                    ) {
+                        Text("Modifier mon profil")
                     }
 
                     Spacer(Modifier.height(18.dp))

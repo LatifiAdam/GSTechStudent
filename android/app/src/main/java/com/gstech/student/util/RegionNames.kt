@@ -1,18 +1,29 @@
 package com.gstech.student.util
 
 object RegionNames {
-    private val names = mapOf(
-        "1" to "Rabat-Salé-Kénitra", "rsk" to "Rabat-Salé-Kénitra",
-        "2" to "Casablanca-Settat", "cs" to "Casablanca-Settat",
-        "3" to "Tanger-Tétouan-Al Hoceïma", "tta" to "Tanger-Tétouan-Al Hoceïma",
-        "4" to "Fès-Meknès", "fm" to "Fès-Meknès",
-        "5" to "Marrakech-Safi", "m" to "Marrakech-Safi",
-        "6" to "Oriental", "or" to "Oriental",
-        "7" to "Béni Mellal-Khénifra", "bs" to "Béni Mellal-Khénifra",
-        "8" to "Drâa-Tafilalet", "d" to "Drâa-Tafilalet",
-        "9" to "Souss-Massa", "smd" to "Souss-Massa",
-        "10" to "Guelmim-Oued Noun", "gon" to "Guelmim-Oued Noun"
+    data class Option(val code: String, val name: String)
+
+    // IMPORTANT: code is the value sent to the backend / stored in the FK.
+    // The French name is only the display label.
+    val options = listOf(
+        Option("RSK", "Rabat-Salé-Kénitra"),
+        Option("CS", "Casablanca-Settat"),
+        Option("TTA", "Tanger-Tétouan-Al Hoceïma"),
+        Option("FM", "Fès-Meknès"),
+        Option("M", "Marrakech-Safi"),
+        Option("OR", "Oriental"),
+        Option("BS", "Béni Mellal-Khénifra"),
+        Option("D", "Drâa-Tafilalet"),
+        Option("SMD", "Souss-Massa"),
+        Option("GON", "Guelmim-Oued Noun"),
     )
+
+    private val names = buildMap {
+        options.forEach { option ->
+            put(option.code.lowercase(), option.name)
+            put(option.name.lowercase(), option.name)
+        }
+    }
 
     fun display(value: String?): String {
         val clean = value?.trim().orEmpty()

@@ -410,15 +410,10 @@ export class UsersService {
         if (creatorRole === Role.DIRECTEUR && false) {
           throw new BadRequestException('Un Directeur peut uniquement créer un Gestionnaire, un Formateur ou un Étudiant');
         }
-        if ([Role.SRIO, Role.SCQ].includes(dto.role)) {
-          if (!dto.region) {
-            throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
-          }
-
-          // The database stores the canonical region code (RSK, CS, TTA, ...).
-          // Accept both the code and the official French region name from clients,
-          // then always persist the code. This prevents FK failures when the
-          // Android form sends a display name such as "Rabat-Salé-Kénitra".
+        // `utilisateur.region` is a foreign-key to the canonical region code
+        // (RSK, CS, TTA, FM, M, OR, BS, D, SMD, GON). Clients may send either
+        // the code or the French display name; normalize before persistence.
+        if (dto.region?.trim()) {
           const requestedRegion = dto.region.trim();
           const regionRow = await manager.query(
             `SELECT region FROM region WHERE region = ? OR nom = ? LIMIT 1`,
@@ -430,9 +425,15 @@ export class UsersService {
           }
 
           dto.region = regionRow[0].region;
+        }
 
+        if ([Role.SRIO, Role.SCQ].includes(dto.role) && !dto.region) {
+          throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
+        }
+
+        if ([Role.SRIO, Role.SCQ].includes(dto.role)) {
           const existingRegional = await manager.findOne(Utilisateur, {
-            where: { role: dto.role, region: dto.region, isActive: true },
+            where: { role: dto.role, region: dto.region!, isActive: true },
           });
 
           if (existingRegional) {
@@ -464,7 +465,29 @@ export class UsersService {
           }
         }
 
-        if (targetEfp && [Role.DIRECTEUR, Role.GESTIONNAIRE, Role.FORMATEUR, Role.stagiaire].includes(dto.role)) { dto.region = targetEfp.region; }
+        if (targetEfp && [Role.DIRECTEUR, Role.GESTIONNAIRE, Role.FORMATEUR, Role.stagiaire].includes(dto.role)) {
+          dto.region = targetEfp.region;
+        }
+
+        // A Directeur created by Super Admin needs a region before later EFP assignment.
+        // A SCQ-created Directeur already inherits the SCQ region above.
+        if (dto.role === Role.DIRECTEUR && !dto.region) {
+          throw new BadRequestException('La région est obligatoire pour un Directeur avant son affectation à un EFP');
+        }
+
+        // An EFP row should already contain a canonical code, but normalize again so
+        // older data or another client cannot reintroduce a region-name FK violation.
+        if (dto.region?.trim()) {
+          const requestedRegion = dto.region.trim();
+          const regionRow = await manager.query(
+            `SELECT region FROM region WHERE region = ? OR nom = ? LIMIT 1`,
+            [requestedRegion, requestedRegion],
+          );
+          if (!regionRow?.length) {
+            throw new BadRequestException('Région invalide.');
+          }
+          dto.region = regionRow[0].region;
+        }
 
         // ------------------------------------------------------
         // EMAIL
@@ -635,6 +658,15 @@ export class UsersService {
             await manager.save(
               administrateur,
             );
+
+            // The temporary bootstrap account exists only until the first
+            // permanent Super Admin has been created successfully.
+            await manager.delete(Utilisateur, {
+              role: Role.SUPER_ADMIN,
+              isBootstrap: true,
+              idUtilisateur: Not(utilisateur.idUtilisateur),
+            });
+
             break;
           }
 
@@ -644,56 +676,25 @@ export class UsersService {
             );
         }
 
-        // ------------------------------------------------------
-        // AUDIT LOG
-        // ------------------------------------------------------
+        const creator = creatorId
+          ? await manager.findOne(Utilisateur, { where: { idUtilisateur: creatorId } })
+          : null;
+        // The bootstrap Super Admin is intentionally removed after the first real
+        // Super Admin is created. Do not leave a dangling audit FK to that user.
+        const auditActorId = creator?.isBootstrap === true ? null : (creatorId ?? null);
 
-        // Bootstrap accounts are temporary. Their user row is deleted after
-        // the first real SuperAdmin is created, so they must never be stored
-        // as audit_log.actor_id. Resolve the flag directly from MySQL so this
-        // also works regardless of TypeORM column/property mapping.
-        let creatorIsBootstrap = false;
-
-        if (creatorId) {
-          const creatorRows = await manager.query(
-            `SELECT is_bootstrap AS isBootstrap FROM utilisateur WHERE id_utilisateur = ? LIMIT 1`,
-            [creatorId],
-          );
-
-          creatorIsBootstrap =
-            Number(creatorRows?.[0]?.isBootstrap ?? 0) === 1;
-        }
-
-        const auditActorId = creatorIsBootstrap
-          ? null
-          : (creatorId ?? null);
-
-        await manager.save(
-          AuditLog,
-          manager.create(AuditLog, {
-            actorId: auditActorId,
-            actorRole: creatorRole,
-            action: 'CREATE',
-            entityType: 'utilisateur',
-            entityId: utilisateur.idUtilisateur,
-            region: dto.region ?? targetEfp?.region ?? null,
-            idEtablissement: dto.idEtablissement ?? null,
-            oldValue: null,
-            newValue: { role: dto.role },
-            ipAddress: null,
-          }),
-        );
-
-        // Delete the temporary bootstrap account only after the audit row has
-        // been written successfully. The FK can then safely SET actor_id NULL
-        // when this temporary account is removed.
-        if (dto.role === Role.SUPER_ADMIN) {
-          await manager.delete(Utilisateur, {
-            role: Role.SUPER_ADMIN,
-            isBootstrap: true,
-            idUtilisateur: Not(utilisateur.idUtilisateur),
-          });
-        }
+        await manager.save(AuditLog, manager.create(AuditLog, {
+          actorId: auditActorId,
+          actorRole: creatorRole,
+          action: 'CREATE',
+          entityType: 'utilisateur',
+          entityId: utilisateur.idUtilisateur,
+          region: dto.region ?? targetEfp?.region ?? null,
+          idEtablissement: dto.idEtablissement ?? null,
+          oldValue: null,
+          newValue: { role: dto.role },
+          ipAddress: null,
+        }));
 
         return {
           ...utilisateur,

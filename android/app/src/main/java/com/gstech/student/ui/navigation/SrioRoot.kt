@@ -19,5 +19,5 @@ import kotlinx.coroutines.launch
      initialRole = "gestionnaire",
      allowedRoleFilters = listOf(com.gstech.student.model.Role.GESTIONNAIRE),
      filterLabels = mapOf(com.gstech.student.model.Role.GESTIONNAIRE to "Gestionnaire")
- )};composable("srio/add"){AddUserScreen(container,{nav.popBackStack()},setOf("gestionnaire"))};composable("srio/profile"){SettingsScreen({nav.popBackStack()},{},{},{scope.launch{container.authRepository.logout();onSignedOut()}})}}}
+ )};composable("srio/add"){AddUserScreen(container,{nav.popBackStack()},setOf("gestionnaire"))};composable("srio/profile"){SettingsScreen({nav.popBackStack()},{nav.navigate("srio/edit-profile")},{},{scope.launch{container.authRepository.logout();onSignedOut()}})};composable("srio/edit-profile"){EditProfileScreen(container){nav.popBackStack()}}}}
 }

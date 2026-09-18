@@ -70,6 +70,7 @@ import com.gstech.student.data.remote.dto.ServerStatusDto
 import com.gstech.student.data.remote.dto.TechnicalLogCreateDto
 import com.gstech.student.data.remote.dto.TechnicalLogDto
 import com.gstech.student.ui.shared.SettingsScreen
+import com.gstech.student.ui.shared.EditProfileScreen
 import com.gstech.student.ui.admin.UsersListScreen
 import com.gstech.student.ui.admin.AddUserScreen
 import com.gstech.student.ui.admin.UserDetailScreen
@@ -192,7 +193,7 @@ fun SuperAdminRoot(container: AppContainer, onSignedOut: () -> Unit) {
             composable(SuperAdminTab.PROFILE.route) {
                 SettingsScreen(
                     onBack = { nav.popBackStack() },
-                    onEditProfile = {},
+                    onEditProfile = { nav.navigate("superadmin/edit-profile") },
                     onLanguage = {},
                     onSignOut = {
                         scope.launch {
@@ -201,6 +202,9 @@ fun SuperAdminRoot(container: AppContainer, onSignedOut: () -> Unit) {
                         }
                     }
                 )
+            }
+            composable("superadmin/edit-profile") {
+                EditProfileScreen(container) { nav.popBackStack() }
             }
         }
     }
