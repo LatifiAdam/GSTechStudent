@@ -126,6 +126,18 @@ fun GestionnaireDocumentsScreen(
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument()
         ) { uri ->
+            if (uri == null) return@rememberLauncherForActivityResult
+            val resolver = container.context.contentResolver
+            val mime = resolver.getType(uri)
+            val size = resolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+            if (mime != "application/pdf") {
+                message = "Veuillez sélectionner un fichier PDF."
+                return@rememberLauncherForActivityResult
+            }
+            if (size > 10L * 1024L * 1024L) {
+                message = "Le PDF ne doit pas dépasser 10 Mo."
+                return@rememberLauncherForActivityResult
+            }
             selectedFile = uri
         }
 

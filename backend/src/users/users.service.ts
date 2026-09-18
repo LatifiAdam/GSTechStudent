@@ -29,6 +29,7 @@ import { Etablissement } from '../entities/etablissement.entity';
 import { AuditLog } from '../entities/audit-log.entity';
 
 import { Role } from '../common/enums/roles.enum';
+import { FileStorageService } from '../common/services/file-storage.service';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -65,6 +66,8 @@ export class UsersService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    private readonly storage: FileStorageService,
   ) {}
 
   // ============================================================
@@ -399,13 +402,42 @@ export class UsersService {
         if (creatorRole === Role.DF && ![Role.SRIO, Role.SCQ].includes(dto.role)) {
           throw new BadRequestException('Le DF peut uniquement créer un SRIO ou un SCQ');
         }
+        if ((creatorRole === Role.SRIO && dto.role === Role.GESTIONNAIRE) || (creatorRole === Role.SCQ && dto.role === Role.DIRECTEUR)) {
+          const creator = await manager.findOne(Utilisateur, { where: { idUtilisateur: creatorId } });
+          if (!creator?.region) throw new BadRequestException('La région du compte créateur est introuvable');
+          dto.region = creator.region;
+        }
         if (creatorRole === Role.DIRECTEUR && false) {
           throw new BadRequestException('Un Directeur peut uniquement créer un Gestionnaire, un Formateur ou un Étudiant');
         }
         if ([Role.SRIO, Role.SCQ].includes(dto.role)) {
-          if (!dto.region) throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
-          const existingRegional = await manager.findOne(Utilisateur, { where: { role: dto.role, region: dto.region, isActive: true } });
-          if (existingRegional) throw new BadRequestException(`Un ${dto.role.toUpperCase()} existe déjà pour cette région`);
+          if (!dto.region) {
+            throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
+          }
+
+          // The database stores the canonical region code (RSK, CS, TTA, ...).
+          // Accept both the code and the official French region name from clients,
+          // then always persist the code. This prevents FK failures when the
+          // Android form sends a display name such as "Rabat-Salé-Kénitra".
+          const requestedRegion = dto.region.trim();
+          const regionRow = await manager.query(
+            `SELECT region FROM region WHERE region = ? OR nom = ? LIMIT 1`,
+            [requestedRegion, requestedRegion],
+          );
+
+          if (!regionRow?.length) {
+            throw new BadRequestException('Région invalide. Sélectionnez une des dix régions officielles.');
+          }
+
+          dto.region = regionRow[0].region;
+
+          const existingRegional = await manager.findOne(Utilisateur, {
+            where: { role: dto.role, region: dto.region, isActive: true },
+          });
+
+          if (existingRegional) {
+            throw new BadRequestException(`Un ${dto.role.toUpperCase()} existe déjà pour cette région`);
+          }
         }
 
         let targetEfp: Etablissement | null = null;
@@ -958,6 +990,7 @@ export class UsersService {
       promotion: stagiaire?.promotion ?? null,
       idClasse: stagiaire?.idClasse ?? null,
       niveauAcces: administrateur?.niveauAcces ?? null,
+      profileImageKey: user.profileImageKey ?? null,
     };
   }
 
@@ -970,4 +1003,63 @@ export class UsersService {
       value,
     );
   }
+
+  async updateProfileImage(id: string, file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Veuillez sélectionner une image de profil');
+
+    const allowed: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    };
+    const ext = allowed[file.mimetype];
+    if (!ext) throw new BadRequestException('Format d’image non supporté (JPG, PNG ou WEBP uniquement)');
+    if (!file.buffer?.length) throw new BadRequestException('L’image est vide');
+
+    const signatures: Record<string, Buffer> = {
+      'image/png': Buffer.from([0x89, 0x50, 0x4e, 0x47]),
+      'image/jpeg': Buffer.from([0xff, 0xd8, 0xff]),
+      'image/webp': Buffer.from('RIFF'),
+    };
+    const signature = signatures[file.mimetype];
+    if (!file.buffer.subarray(0, signature.length).equals(signature)) {
+      throw new BadRequestException('Le contenu du fichier ne correspond pas à son format déclaré');
+    }
+    if (file.mimetype === 'image/webp' && file.buffer.length >= 12 && file.buffer.subarray(8, 12).toString() !== 'WEBP') {
+      throw new BadRequestException('Image WEBP invalide');
+    }
+
+    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const key = await this.storage.save('profiles', `${id}.${ext}`, file.buffer, file.mimetype);
+    const oldKey = user.profileImageKey;
+    user.profileImageKey = key;
+    await this.utilisateurRepo.save(user);
+
+    if (oldKey && oldKey !== key) await this.storage.remove(oldKey).catch(() => undefined);
+
+    return {
+      success: true,
+      profileImageKey: key,
+    };
+  }
+
+  async getProfileImage(id: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+    if (!user.profileImageKey) throw new NotFoundException('Aucune photo de profil enregistrée');
+
+    const contentType = user.profileImageKey.toLowerCase().endsWith('.png')
+      ? 'image/png'
+      : user.profileImageKey.toLowerCase().endsWith('.webp')
+        ? 'image/webp'
+        : 'image/jpeg';
+
+    return {
+      buffer: await this.storage.read(user.profileImageKey),
+      contentType,
+    };
+  }
+
 }

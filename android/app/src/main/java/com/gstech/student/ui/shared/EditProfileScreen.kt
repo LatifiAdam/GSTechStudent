@@ -1,5 +1,8 @@
 package com.gstech.student.ui.shared
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -36,6 +40,36 @@ fun EditProfileScreen(container: AppContainer, onBack: () -> Unit) {
     var currentPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var profileBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var uploadingProfileImage by remember { mutableStateOf(false) }
+    var profileImageMessage by remember { mutableStateOf<String?>(null) }
+
+    val profilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) scope.launch {
+            uploadingProfileImage = true
+            profileImageMessage = null
+            runCatching {
+                val resolver = container.context.contentResolver
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: error("Impossible de lire l'image.")
+                if (bytes.size > 2 * 1024 * 1024) error("L'image ne doit pas dépasser 2 Mo.")
+                val mime = resolver.getType(uri) ?: error("Format d'image non reconnu.")
+                if (mime !in setOf("image/jpeg", "image/png", "image/webp")) {
+                    error("Format accepté : JPG, PNG ou WEBP.")
+                }
+                container.profileRepository.uploadProfileImage(bytes, "profile_image", mime)
+                container.profileRepository.getProfileImageBitmap()
+            }.onSuccess {
+                profileBitmap = it
+                profileImageMessage = "Photo de profil mise à jour."
+            }.onFailure {
+                profileImageMessage = userFriendlyErrorMessage(it)
+            }
+            uploadingProfileImage = false
+        }
+    }
 
     LaunchedEffect(Unit) {
         state = runCatching {
@@ -50,6 +84,11 @@ fun EditProfileScreen(container: AppContainer, onBack: () -> Unit) {
             },
             onFailure = { UiState.Error(userFriendlyErrorMessage(it)) },
         )
+    }
+
+    LaunchedEffect(Unit) {
+        runCatching { container.profileRepository.getProfileImageBitmap() }
+            .onSuccess { profileBitmap = it }
     }
 
     Column(Modifier.fillMaxSize().background(GSBackground)) {
@@ -71,6 +110,24 @@ fun EditProfileScreen(container: AppContainer, onBack: () -> Unit) {
             is UiState.Success -> Column(
                 Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 4.dp),
             ) {
+                profileBitmap?.let { bitmap ->
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = "Photo de profil",
+                        modifier = Modifier.size(104.dp).padding(bottom = 8.dp),
+                    )
+                }
+                Button(
+                    onClick = { profilePicker.launch(arrayOf("image/jpeg", "image/png", "image/webp")) },
+                    enabled = !uploadingProfileImage,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(if (uploadingProfileImage) "Upload en cours…" else "Modifier la photo de profil")
+                }
+                profileImageMessage?.let {
+                    Text(it, color = if (it.contains("mise à jour", ignoreCase = true)) GSTeal else GSDanger, modifier = Modifier.padding(top = 8.dp))
+                }
+                Spacer(Modifier.height(16.dp))
                 Text("Profile information", style = MaterialTheme.typography.titleLarge, color = GSTextPrimary, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(12.dp))
                 ProfileField("First name", firstName) { firstName = it }

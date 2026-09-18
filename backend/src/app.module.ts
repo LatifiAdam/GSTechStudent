@@ -21,6 +21,7 @@ import { GradingModule } from './grading/grading.module';
 import { DocumentsModule } from './documents/documents.module';
 import { EtablissementsModule } from './etablissements/etablissements.module';
 import { BootstrapService } from './bootstrap.service';
+import { CommonModule } from './common/common.module';
 
 import {
   Utilisateur,
@@ -113,6 +114,7 @@ import {
     GradingModule,
     DocumentsModule,
     EtablissementsModule,
+    CommonModule,
   ],
 
   controllers: [AppController],

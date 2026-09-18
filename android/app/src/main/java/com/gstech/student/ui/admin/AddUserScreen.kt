@@ -41,6 +41,7 @@ fun AddUserScreen(
     var prenom by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var role by remember { mutableStateOf(if (allowedRoles.contains("superadmin")) "superadmin" else allowedRoles.firstOrNull() ?: "stagiaire") }
     var numeroEtudiant by remember { mutableStateOf("") }
     var promotion by remember { mutableStateOf("") }
@@ -158,6 +159,12 @@ fun AddUserScreen(
                     onChange = { password = it }
                 )
 
+                field(
+                    label = "Confirm password",
+                    value = confirmPassword,
+                    onChange = { confirmPassword = it }
+                )
+
                 // =========================
                 // PERSONAL INFORMATION
                 // =========================
@@ -195,47 +202,36 @@ fun AddUserScreen(
                 // ROLE-SPECIFIC INFORMATION
                 // =========================
 
-                @OptIn(ExperimentalMaterial3Api::class)
                 when (role) {
                     "srio", "scq" -> {
                         val regions = listOf(
-                            "Rabat-Salé-Kénitra",
-                            "Casablanca-Settat",
-                            "Tanger-Tétouan-Al Hoceïma",
-                            "Fès-Meknès",
-                            "Marrakech-Safi",
-                            "Oriental",
-                            "Béni Mellal-Khénifra",
-                            "Drâa-Tafilalet",
-                            "Souss-Massa",
-                            "Guelmim-Oued Noun"
+                            "RSK" to "Rabat-Salé-Kénitra",
+                            "CS" to "Casablanca-Settat",
+                            "TTA" to "Tanger-Tétouan-Al Hoceïma",
+                            "FM" to "Fès-Meknès",
+                            "M" to "Marrakech-Safi",
+                            "OR" to "Oriental",
+                            "BS" to "Béni Mellal-Khénifra",
+                            "D" to "Drâa-Tafilalet",
+                            "SMD" to "Souss-Massa",
+                            "GON" to "Guelmim-Oued Noun"
                         )
                         var regionExpanded by remember { mutableStateOf(false) }
-
-                        @OptIn(ExperimentalMaterial3Api::class)
-                        ExposedDropdownMenuBox(
-                            expanded = regionExpanded,
-                            onExpandedChange = { regionExpanded = !regionExpanded }
-                        ) {
-                            OutlinedTextField(
-                                value = region.ifBlank { "Sélectionner une région" },
-                                onValueChange = {},
-                                readOnly = true,
-                                label = { Text("Région") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(regionExpanded) },
-                                modifier = Modifier.fillMaxWidth().menuAnchor()
-                            )
-                            ExposedDropdownMenu(
+                        Box(Modifier.fillMaxWidth()) {
+                            OutlinedButton(
+                                onClick = { regionExpanded = true },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(regions.firstOrNull { it.first == region }?.second ?: "Sélectionner une région")
+                            }
+                            DropdownMenu(
                                 expanded = regionExpanded,
                                 onDismissRequest = { regionExpanded = false }
                             ) {
-                                regions.forEach { r ->
+                                regions.forEach { (code, name) ->
                                     DropdownMenuItem(
-                                        text = { Text(r) },
-                                        onClick = {
-                                            region = r
-                                            regionExpanded = false
-                                        }
+                                        text = { Text(name) },
+                                        onClick = { region = code; regionExpanded = false }
                                     )
                                 }
                             }
@@ -300,6 +296,10 @@ fun AddUserScreen(
 
                         if (!studentFieldsValid) {
                             error = "Student number and promotion are required for a Stagiaire."
+                            return@Button
+                        }
+                        if (password != confirmPassword) {
+                            error = "Passwords do not match."
                             return@Button
                         }
 
@@ -378,6 +378,7 @@ fun AddUserScreen(
                                 prenom.isNotBlank() &&
                                 email.isNotBlank() &&
                                 password.length >= 8 &&
+                                confirmPassword == password &&
                                 (role != "stagiaire" || (numeroEtudiant.isNotBlank() && promotion.isNotBlank()))
                 ) {
 

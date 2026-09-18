@@ -79,7 +79,7 @@ export class DocumentRequestsService {
       `Document demandé : ${title}`,
       `Ce document est généré pour l'étudiant identifié ci-dessus.`,
     ]);
-    const filePath = await this.storage.save('generated-documents', `${demande.idDemande}-${uuid()}.pdf`, buffer);
+    const filePath = await this.storage.save('generated-documents', `${demande.idDemande}-${uuid()}.pdf`, buffer, 'application/pdf');
     demande.statut = StatutDemande.DELIVREE; demande.dateTraitement = new Date(); demande.fichierGenere = filePath;
     const saved = await this.demandeRepo.save(demande);
     await this.notifications.notifyUsers([demande.idstagiaire], 'document_delivre', `Votre document "${title}" a été accepté et est disponible.`);

@@ -84,7 +84,7 @@ fun AdminEstablishmentsScreen(container: AppContainer) {
     LaunchedEffect(Unit) { reload() }
 
     val regionalOnly = currentRole == Role.SRIO || currentRole == Role.SCQ
-    val canCreate = currentRole == Role.DF
+    val canCreate = currentRole == Role.DF || currentRole == Role.SUPER_ADMIN
 
     Column(
         Modifier
@@ -279,7 +279,38 @@ fun AdminEstablishmentsScreen(container: AppContainer) {
                 Column {
                     OutlinedTextField(value = createName, onValueChange = { createName = it }, label = { Text("Nom") }, singleLine = true)
                     Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(value = createRegion, onValueChange = { createRegion = it }, label = { Text("Région") }, singleLine = true)
+                    var regionMenuExpanded by remember { mutableStateOf(false) }
+                    val regions = listOf(
+                        "RSK" to "Rabat-Salé-Kénitra",
+                        "CS" to "Casablanca-Settat",
+                        "TTA" to "Tanger-Tétouan-Al Hoceïma",
+                        "FM" to "Fès-Meknès",
+                        "M" to "Marrakech-Safi",
+                        "OR" to "Oriental",
+                        "BS" to "Béni Mellal-Khénifra",
+                        "D" to "Drâa-Tafilalet",
+                        "SMD" to "Souss-Massa",
+                        "GON" to "Guelmim-Oued Noun"
+                    )
+                    Box(Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = { regionMenuExpanded = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(regions.firstOrNull { it.first == createRegion }?.second ?: "Sélectionner une région")
+                        }
+                        DropdownMenu(
+                            expanded = regionMenuExpanded,
+                            onDismissRequest = { regionMenuExpanded = false }
+                        ) {
+                            regions.forEach { (code, name) ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = { createRegion = code; regionMenuExpanded = false }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {

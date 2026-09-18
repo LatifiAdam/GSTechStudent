@@ -36,15 +36,19 @@ export class DocumentsService {
   }
 
   async upload(file: Express.Multer.File, nomDocument: string, idGestionnaire: string) {
-    if (!file) throw new BadRequestException('Fichier PDF ou DOCX requis');
+    if (!file) throw new BadRequestException('Fichier PDF requis');
     if (file.mimetype !== 'application/pdf') throw new BadRequestException('Seuls les fichiers PDF sont autorisés');
+    if (!file.buffer?.length) throw new BadRequestException('Le fichier est vide');
+    if (file.buffer.length > 10 * 1024 * 1024) throw new BadRequestException('Le fichier ne doit pas dépasser 10 Mo');
+    const signature = Buffer.from('%PDF-');
+    if (!file.buffer.subarray(0, signature.length).equals(signature)) throw new BadRequestException('Le contenu ne correspond pas à un PDF valide');
     const gestionnaire = await this.gestionnaireRepo.findOne({ where: { idUtilisateur: idGestionnaire } });
     if (!gestionnaire?.idEtablissement) throw new BadRequestException('Le Gestionnaire doit être affecté à un établissement');
     const etab = await this.etablissementRepo.findOne({ where: { idEtablissement: gestionnaire.idEtablissement } });
     if (!etab?.idDirecteur) throw new BadRequestException('Aucun Directeur n’est affecté à cet établissement');
     const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
     const filename = `${Date.now()}-${safe}`;
-    const stored = await this.storage.save('documents', filename, file.buffer);
+    const stored = await this.storage.save('documents', filename, file.buffer, 'application/pdf');
     return this.repo.save(this.repo.create({
       nomDocument: nomDocument?.trim() || file.originalname,
       typeDocument: 'pdf',

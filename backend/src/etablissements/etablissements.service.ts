@@ -34,6 +34,25 @@ export class EtablissementsService {
     return names[normalized] ?? String(value); 
   }
 
+  private normalizeRegionCode(value: string | number | null | undefined): string | null {
+    if (value === null || value === undefined || String(value).trim() === '') return null;
+    const raw = String(value).trim();
+    const normalized = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const aliases: Record<string, string> = {
+      '1': 'RSK', 'rsk': 'RSK', 'rabat-sale-kenitra': 'RSK',
+      '2': 'CS', 'cs': 'CS', 'casablanca-settat': 'CS',
+      '3': 'TTA', 'tta': 'TTA', 'tanger-tetouan-al hoceima': 'TTA', 'tanger-tetouan-al-hoceima': 'TTA',
+      '4': 'FM', 'fm': 'FM', 'fes-meknes': 'FM',
+      '5': 'M', 'm': 'M', 'marrakech-safi': 'M',
+      '6': 'OR', 'or': 'OR', 'oriental': 'OR',
+      '7': 'BS', 'bs': 'BS', 'beni mellal-khenifra': 'BS',
+      '8': 'D', 'd': 'D', 'draa-tafilalet': 'D',
+      '9': 'SMD', 'smd': 'SMD', 'souss-massa': 'SMD',
+      '10': 'GON', 'gon': 'GON', 'guelmim-oued noun': 'GON',
+    };
+    return aliases[normalized] ?? null;
+  }
+
   private sameRegion(a: string | number | null | undefined, b: string | number | null | undefined): boolean {
     return !!a && !!b && this.regionName(a)?.toLowerCase() === this.regionName(b)?.toLowerCase();
   }
@@ -64,7 +83,8 @@ export class EtablissementsService {
       throw new BadRequestException('La région est obligatoire');
     }
     const normalizedName = nomEtablissement.trim();
-    const normalizedRegion = String(region).trim();
+    const normalizedRegion = this.normalizeRegionCode(region);
+    if (!normalizedRegion) throw new BadRequestException('Région invalide. Sélectionnez une des dix régions officielles.');
     const existing = await this.repo.findOne({ where: { nomEtablissement: normalizedName, region: normalizedRegion } });
     if (existing) {
       throw new BadRequestException(`Un établissement nommé « ${normalizedName} » existe déjà dans cette région`);

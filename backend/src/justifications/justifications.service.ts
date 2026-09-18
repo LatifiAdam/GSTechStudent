@@ -79,6 +79,7 @@ export class JustificationsService {
       'justifications',
       `${uuid()}.${ext}`,
       file.buffer,
+      file.mimetype,
     );
 
     return {

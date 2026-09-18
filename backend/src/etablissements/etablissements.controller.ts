@@ -11,8 +11,8 @@ import { AssignUserDto } from './dto/assign-user.dto';
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class EtablissementsController {
  constructor(private readonly service:EtablissementsService){}
- @Roles(Role.DF, Role.SRIO, Role.SCQ) @Get() list(@Req() req:any){return this.service.list(req.user.userId, req.user.role);}
- @Roles(Role.DF) @Post() create(@Body() dto:CreateEtablissementDto){return this.service.create(dto.nomEtablissement, dto.region);}
+ @Roles(Role.SUPER_ADMIN, Role.DF, Role.SRIO, Role.SCQ) @Get() list(@Req() req:any){return this.service.list(req.user.userId, req.user.role);}
+ @Roles(Role.SUPER_ADMIN, Role.DF) @Post() create(@Body() dto:CreateEtablissementDto){return this.service.create(dto.nomEtablissement, dto.region);}
  @Roles(Role.DF, Role.SCQ) @Post(':id/directeur') assignDirector(@Param('id') id:string,@Body() dto:AssignUserDto,@Req() req:any){return this.service.assignDirector(id,dto.idUtilisateur,req.user.userId,req.user.role);}
  @Roles(Role.DF,Role.SRIO) @Post(':id/gestionnaires') addGestionnaire(@Param('id') id:string,@Body() dto:AssignUserDto,@Req() req:any){return this.service.addGestionnaire(id,dto.idUtilisateur,req.user.userId,req.user.role);}
  @Roles(Role.DF,Role.SRIO) @Delete(':id/gestionnaires/:gestionnaireId') removeGestionnaire(@Param('id') id:string,@Param('gestionnaireId') gid:string,@Req() req:any){return this.service.removeGestionnaire(id,gid,req.user.userId,req.user.role);}

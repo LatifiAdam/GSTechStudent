@@ -1,6 +1,7 @@
 package com.gstech.student.data.remote
 
 import okhttp3.ResponseBody
+import okhttp3.MultipartBody
 
 import com.gstech.student.data.remote.dto.*
 import retrofit2.Response
@@ -19,6 +20,13 @@ interface AuthApi {
 }
 
 interface UsersApi {
+    @Multipart
+    @POST("users/me/profile-image")
+    suspend fun uploadProfileImage(@Part file: MultipartBody.Part): UserDto
+
+    @GET("users/me/profile-image")
+    suspend fun getMyProfileImage(): Response<ResponseBody>
+
     @GET("users")
     suspend fun getAll(@Query("role") role: String? = null): List<UserDto>
 

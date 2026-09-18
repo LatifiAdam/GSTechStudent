@@ -48,4 +48,7 @@ data class UserDto(
 
     @Json(name = "adresse")
     val adresse: String? = null,
+
+    @Json(name = "profileImageKey")
+    val profileImageKey: String? = null,
 )
