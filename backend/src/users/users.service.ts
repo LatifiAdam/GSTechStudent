@@ -635,15 +635,6 @@ export class UsersService {
             await manager.save(
               administrateur,
             );
-
-            // The temporary bootstrap account exists only until the first
-            // permanent Super Admin has been created successfully.
-            await manager.delete(Utilisateur, {
-              role: Role.SUPER_ADMIN,
-              isBootstrap: true,
-              idUtilisateur: Not(utilisateur.idUtilisateur),
-            });
-
             break;
           }
 
@@ -653,14 +644,29 @@ export class UsersService {
             );
         }
 
-                const creator = creatorId
-          ? await manager.findOne(Utilisateur, {
-              where: { idUtilisateur: creatorId },
-            })
-          : null;
+        // ------------------------------------------------------
+        // AUDIT LOG
+        // ------------------------------------------------------
 
-        const auditActorId =
-          creator?.isBootstrap === true ? null : (creatorId ?? null);
+        // Bootstrap accounts are temporary. Their user row is deleted after
+        // the first real SuperAdmin is created, so they must never be stored
+        // as audit_log.actor_id. Resolve the flag directly from MySQL so this
+        // also works regardless of TypeORM column/property mapping.
+        let creatorIsBootstrap = false;
+
+        if (creatorId) {
+          const creatorRows = await manager.query(
+            `SELECT is_bootstrap AS isBootstrap FROM utilisateur WHERE id_utilisateur = ? LIMIT 1`,
+            [creatorId],
+          );
+
+          creatorIsBootstrap =
+            Number(creatorRows?.[0]?.isBootstrap ?? 0) === 1;
+        }
+
+        const auditActorId = creatorIsBootstrap
+          ? null
+          : (creatorId ?? null);
 
         await manager.save(
           AuditLog,
@@ -677,6 +683,17 @@ export class UsersService {
             ipAddress: null,
           }),
         );
+
+        // Delete the temporary bootstrap account only after the audit row has
+        // been written successfully. The FK can then safely SET actor_id NULL
+        // when this temporary account is removed.
+        if (dto.role === Role.SUPER_ADMIN) {
+          await manager.delete(Utilisateur, {
+            role: Role.SUPER_ADMIN,
+            isBootstrap: true,
+            idUtilisateur: Not(utilisateur.idUtilisateur),
+          });
+        }
 
         return {
           ...utilisateur,
