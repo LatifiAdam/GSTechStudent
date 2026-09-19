@@ -242,11 +242,30 @@ export class UsersService {
         );
       }
 
-      case Role.DIRECTEUR:
-      case Role.GESTIONNAIRE: {
+      case Role.DIRECTEUR: {
         const users = await this.utilisateurRepo.find({ where: { role: query.role } });
         const rows = await Promise.all(users.map((user) => this.buildUserResponse(user)));
         return rows.filter((u: any) => this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp));
+      }
+
+      case Role.GESTIONNAIRE: {
+        // For SRIO, load the dedicated Gestionnaire rows with their EFP relation
+        // instead of relying only on utilisateur.region. This also handles legacy
+        // accounts whose region is null but whose EFP already belongs to the SRIO
+        // region. The endpoint remains role- and region-scoped by the backend.
+        const gestionnaires = await this.gestionnaireRepo.find({
+          relations: ['utilisateur', 'etablissement'],
+        });
+
+        const rows = await Promise.all(
+          gestionnaires
+            .filter((g) => g.utilisateur?.isActive !== false)
+            .map((g) => this.buildUserResponse(g.utilisateur)),
+        );
+
+        return rows.filter((u: any) =>
+          this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp),
+        );
       }
 
       default:

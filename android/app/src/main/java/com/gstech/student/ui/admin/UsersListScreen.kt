@@ -74,11 +74,12 @@ fun UsersListScreen(
             state = UiState.Loading
 
             state = safeCall {
-                val allUsers = container.adminRepository.getUsers(null)
+                // When a role is selected, query that role directly. This is
+                // important for SRIO: /users?role=gestionnaire lets the backend
+                // apply the regional Gestionnaire scope instead of returning a
+                // national list that is filtered again on the device.
+                val allUsers = container.adminRepository.getUsers(roleFilter)
 
-                // Apply the role filter client-side using the canonical Role mapping.
-                // This avoids empty results when a backend deployment uses a legacy
-                // role spelling/query implementation.
                 allUsers
                     .filter { roleFilter == null || it.role == roleFilter }
                     .filter { showAdminUsers || it.role != Role.SUPER_ADMIN }
