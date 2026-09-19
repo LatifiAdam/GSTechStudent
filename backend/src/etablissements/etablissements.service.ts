@@ -118,7 +118,13 @@ export class EtablissementsService {
     const etab=await this.get(idEtablissement); if(actorRole===Role.DIRECTEUR) throw new ForbiddenException('Le Directeur ne gère pas les Gestionnaires'); if([Role.DIRECTEUR].includes(actorRole!) && etab.idDirecteur!==actorId) throw new ForbiddenException('Cet établissement ne dépend pas de ce Directeur');
     const user=await this.userRepo.findOne({where:{idUtilisateur:idGestionnaire}}); if(!user || user.role!==Role.GESTIONNAIRE) throw new BadRequestException('Utilisateur invalide : un Gestionnaire est requis');
     const g=await this.gestionnaireRepo.findOne({where:{idUtilisateur:idGestionnaire}}); if(!g) throw new BadRequestException('Compte Gestionnaire incomplet');
-    if(actorRole===Role.SRIO){ const actor=await this.userRepo.findOne({where:{idUtilisateur:actorId}}); if(!actor || !this.sameRegion(actor.region, etab.region)) throw new ForbiddenException('Cet établissement est hors de votre région'); }
+    if(actorRole===Role.SRIO){
+      const actor=await this.userRepo.findOne({where:{idUtilisateur:actorId}});
+      if(!actor || !this.sameRegion(actor.region, etab.region)) throw new ForbiddenException('Cet établissement est hors de votre région');
+      if(!user.region || !this.sameRegion(user.region, etab.region)) {
+        throw new BadRequestException("Ce Gestionnaire n'appartient pas à la région de cet établissement");
+      }
+    }
     if(g.idEtablissement && g.idEtablissement!==idEtablissement) throw new BadRequestException('Ce Gestionnaire est déjà affecté à un autre établissement');
     g.idEtablissement=idEtablissement; return this.gestionnaireRepo.save(g);
   }

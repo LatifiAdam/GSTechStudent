@@ -51,4 +51,7 @@ data class UserDto(
 
     @Json(name = "profileImageKey")
     val profileImageKey: String? = null,
+
+    @Json(name = "region")
+    val region: String? = null,
 )

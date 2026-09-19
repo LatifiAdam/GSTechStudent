@@ -1,11 +1,15 @@
 package com.gstech.student.ui.admin
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Person
@@ -14,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,11 +40,45 @@ fun UserDetailScreen(container: AppContainer, userId: String, onBack: () -> Unit
     var state by remember { mutableStateOf<UiState<AdminUser>>(UiState.Loading) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showModify by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     var currentUserId by remember { mutableStateOf<String?>(null) }
+    var profileBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    var uploadingProfileImage by remember { mutableStateOf(false) }
+    var profileImageMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+
+    val profilePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) scope.launch {
+            uploadingProfileImage = true
+            profileImageMessage = null
+            runCatching {
+                val resolver = container.context.contentResolver
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() }
+                    ?: error("Impossible de lire l'image.")
+                if (bytes.size > 2 * 1024 * 1024) error("L'image ne doit pas dépasser 2 Mo.")
+                val mime = resolver.getType(uri) ?: error("Format d'image non reconnu.")
+                if (mime !in setOf("image/jpeg", "image/png", "image/webp")) {
+                    error("Format accepté : JPG, PNG ou WEBP.")
+                }
+                container.profileRepository.uploadUserProfileImage(userId, bytes, "profile_image", mime)
+                container.profileRepository.getUserProfileImageBitmap(userId)
+            }.onSuccess {
+                profileBitmap = it
+                profileImageMessage = "Photo de profil mise à jour."
+            }.onFailure {
+                profileImageMessage = userFriendlyErrorMessage(it)
+            }
+            uploadingProfileImage = false
+        }
+    }
 
     LaunchedEffect(Unit) { currentUserId = container.tokenManager.userIdNow() }
-    LaunchedEffect(userId) { state = safeCall { container.adminRepository.getUser(userId) } }
+    LaunchedEffect(userId) {
+        state = safeCall { container.adminRepository.getUser(userId) }
+        runCatching { container.profileRepository.getUserProfileImageBitmap(userId) }
+            .onSuccess { profileBitmap = it }
+    }
 
     Column(Modifier.fillMaxSize().background(GSBackground)) {
         Row(Modifier.fillMaxWidth().padding(20.dp, 20.dp, 20.dp, 0.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -52,8 +91,42 @@ fun UserDetailScreen(container: AppContainer, userId: String, onBack: () -> Unit
             is UiState.Success -> Column(Modifier.fillMaxSize().padding(20.dp).verticalScroll(rememberScrollState())) {
                 GSCard {
                     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                        Box(Modifier.size(80.dp).clip(CircleShape).background(GSDivider), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Person, contentDescription = null, tint = GSTextSecondary, modifier = Modifier.size(40.dp))
+                        Box(
+                            Modifier
+                                .size(96.dp)
+                                .clip(CircleShape)
+                                .background(GSDivider)
+                                .clickable {
+                                    profilePicker.launch(arrayOf("image/jpeg", "image/png", "image/webp"))
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            profileBitmap?.let { bitmap ->
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "Photo de profil de ${s.data.name}",
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                )
+                            } ?: Icon(
+                                Icons.Filled.Person,
+                                contentDescription = null,
+                                tint = GSTextSecondary,
+                                modifier = Modifier.size(44.dp),
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            if (uploadingProfileImage) "Téléversement…" else "Appuyer sur la photo pour ajouter ou modifier",
+                            color = GSTextSecondary,
+                            fontSize = 12.sp,
+                        )
+                        profileImageMessage?.let {
+                            Text(
+                                it,
+                                color = if (it.contains("mise à jour", ignoreCase = true)) GSSuccess else GSDanger,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
                         }
                         Spacer(Modifier.height(10.dp))
                         Text(s.data.name, style = MaterialTheme.typography.titleLarge, color = GSTextPrimary)
@@ -130,7 +203,34 @@ fun UserDetailScreen(container: AppContainer, userId: String, onBack: () -> Unit
         AlertDialog(
             onDismissRequest = { showModify = false },
             title = { Text("Modify account") },
-            text = { Column {
+            text = { Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(
+                    Modifier
+                        .size(88.dp)
+                        .clip(CircleShape)
+                        .background(GSDivider)
+                        .clickable { profilePicker.launch(arrayOf("image/jpeg", "image/png", "image/webp")) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    profileBitmap?.let { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Photo de profil",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                        )
+                    } ?: Icon(
+                        Icons.Filled.Person,
+                        contentDescription = null,
+                        tint = GSTextSecondary,
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
+                Text(
+                    if (uploadingProfileImage) "Téléversement…" else "Appuyer pour ajouter/modifier la photo",
+                    color = GSTextSecondary,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 10.dp),
+                )
                 OutlinedTextField(firstName, { firstName = it }, label = { Text("First name") }, singleLine = true)
                 OutlinedTextField(lastName, { lastName = it }, label = { Text("Last name") }, singleLine = true)
                 OutlinedTextField(email, { email = it }, label = { Text("Email") }, singleLine = true)

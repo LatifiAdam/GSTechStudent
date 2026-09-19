@@ -30,7 +30,7 @@ services:
       - gstech
 
   object-storage:
-    image: quay.io/minio/minio:latest
+    image: minio/minio:latest
     container_name: gstech-object-storage
     restart: unless-stopped
     command: server /data --console-address ":9001"

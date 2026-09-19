@@ -37,8 +37,21 @@ class ProfileRepository(
         api.uploadProfileImage(part)
     }
 
+    suspend fun uploadUserProfileImage(userId: String, bytes: ByteArray, fileName: String, contentType: String) {
+        val requestBody = bytes.toRequestBody(contentType.toMediaType())
+        val part = MultipartBody.Part.createFormData("file", fileName, requestBody)
+        api.uploadUserProfileImage(userId, part)
+    }
+
     suspend fun getProfileImageBitmap(): Bitmap? {
         val response = api.getMyProfileImage()
+        if (!response.isSuccessful) return null
+        val bytes = response.body()?.bytes() ?: return null
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+    }
+
+    suspend fun getUserProfileImageBitmap(userId: String): Bitmap? {
+        val response = api.getUserProfileImage(userId)
         if (!response.isSuccessful) return null
         val bytes = response.body()?.bytes() ?: return null
         return BitmapFactory.decodeByteArray(bytes, 0, bytes.size)

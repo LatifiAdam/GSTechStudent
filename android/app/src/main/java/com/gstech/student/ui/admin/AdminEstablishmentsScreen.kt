@@ -335,7 +335,16 @@ fun AdminEstablishmentsScreen(container: AppContainer) {
     }
 
     selected?.let { e ->
-        val options = if (mode == "director") directors else gestionnaires
+        val options = if (mode == "director") {
+            directors
+        } else {
+            val targetRegion = e.region
+            gestionnaires.filter { user ->
+                // Backend scopes SRIO results already; keep a client-side safety net
+                // so a legacy account with a display-name region remains assignable.
+                user.region == null || RegionNames.display(user.region) == RegionNames.display(targetRegion)
+            }
+        }
         AlertDialog(
             onDismissRequest = { selected = null },
             title = { Text(if (mode == "director") "Affecter un Directeur" else "Affecter un Gestionnaire") },

@@ -78,7 +78,13 @@ export class UsersService {
     const actor = actorId ? await this.utilisateurRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
     const actorG = actorId ? await this.gestionnaireRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
     const actorD = actorId ? await this.directeurRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
-    const scopeRegion = [Role.SRIO, Role.SCQ].includes(actorRole as Role) ? actor?.region : null;
+    const isRegionalActor = [Role.SRIO, Role.SCQ].includes(actorRole as Role);
+    const scopeRegion = isRegionalActor ? actor?.region : null;
+    if (isRegionalActor && !scopeRegion) {
+      // Never fall back to a national listing when a regional administrator
+      // has no region attached to the account.
+      return [];
+    }
     const scopeEfp = [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole as Role) ? (actorD?.etablissement as any)?.idEtablissement ?? actorG?.idEtablissement : null;
     if (!query.role) {
       const users = await this.utilisateurRepo.find({ where: { isActive: true } });
@@ -978,9 +984,38 @@ export class UsersService {
     return { success: true, deactivated: true };
   }
 
+  /** Compare region values using the canonical database codes.
+   *  This keeps regional visibility stable even when legacy records contain
+   *  the French display name instead of RSK/CS/TTA/etc.
+   */
+  regionsMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+    if (!a || !b) return false;
+    const normalize = (value: string) => {
+      const normalized = value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+      const aliases: Record<string, string> = {
+        '1': 'RSK', 'rsk': 'RSK', 'rabat-sale-kenitra': 'RSK',
+        '2': 'CS', 'cs': 'CS', 'casablanca-settat': 'CS',
+        '3': 'TTA', 'tta': 'TTA', 'tanger-tetouan-al hoceima': 'TTA', 'tanger-tetouan-al-hoceima': 'TTA',
+        '4': 'FM', 'fm': 'FM', 'fes-meknes': 'FM',
+        '5': 'M', 'm': 'M', 'marrakech-safi': 'M',
+        '6': 'OR', 'or': 'OR', 'oriental': 'OR',
+        '7': 'BS', 'bs': 'BS', 'beni-mellal-khenifra': 'BS', 'beni mellal-khenifra': 'BS',
+        '8': 'D', 'd': 'D', 'draa-tafilalet': 'D',
+        '9': 'SMD', 'smd': 'SMD', 'souss-massa': 'SMD',
+        '10': 'GON', 'gon': 'GON', 'guelmim-oued noun': 'GON', 'guelmim-oued-noun': 'GON',
+      };
+      return aliases[normalized] ?? value.trim().toUpperCase();
+    };
+    return normalize(a) === normalize(b);
+  }
+
   private inScopeResponse(user: any, actorRole?: Role, region?: string | null, efpId?: string | null): boolean {
     if (!actorRole || [Role.SUPER_ADMIN, Role.DF].includes(actorRole)) return true;
-    if ([Role.SRIO, Role.SCQ].includes(actorRole)) return !region || user.region === region;
+    if ([Role.SRIO, Role.SCQ].includes(actorRole)) return !region || this.regionsMatch(region, user.region);
     if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole)) return !efpId || user.idEtablissement === efpId;
     return user.role === actorRole;
   }
@@ -995,7 +1030,7 @@ export class UsersService {
       this.stagiaireRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
       this.administrateurRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
       this.directeurRepo.findOne({ where: { idUtilisateur: user.idUtilisateur }, relations: ['etablissement'] }),
-      this.gestionnaireRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
+      this.gestionnaireRepo.findOne({ where: { idUtilisateur: user.idUtilisateur }, relations: ['etablissement'] }),
     ]);
 
     let role: Role | null = user.role ?? null;
@@ -1022,7 +1057,10 @@ export class UsersService {
       cin: user.cin,
       telephone: user.telephone,
       adresse: user.adresse,
-      region: user.region,
+      region: user.region
+        ?? gestionnaire?.etablissement?.region
+        ?? directeur?.etablissement?.region
+        ?? null,
       isActive: user.isActive,
       idEtablissement: formateur?.idEtablissement ?? stagiaire?.idEtablissement ?? gestionnaire?.idEtablissement ?? directeur?.etablissement?.idEtablissement ?? null,
       role,

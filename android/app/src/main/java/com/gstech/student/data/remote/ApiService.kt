@@ -24,8 +24,18 @@ interface UsersApi {
     @POST("users/me/profile-image")
     suspend fun uploadProfileImage(@Part file: MultipartBody.Part): UserDto
 
+    @Multipart
+    @POST("users/{id}/profile-image")
+    suspend fun uploadUserProfileImage(
+        @Path("id") id: String,
+        @Part file: MultipartBody.Part,
+    ): UserDto
+
     @GET("users/me/profile-image")
     suspend fun getMyProfileImage(): Response<ResponseBody>
+
+    @GET("users/{id}/profile-image")
+    suspend fun getUserProfileImage(@Path("id") id: String): Response<ResponseBody>
 
     @GET("users")
     suspend fun getAll(@Query("role") role: String? = null): List<UserDto>

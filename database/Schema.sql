@@ -161,6 +161,8 @@ CREATE TABLE utilisateur (
 
     adresse VARCHAR(255) NULL,
 
+    profile_image_key VARCHAR(512) NULL,
+
     two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
 
     two_factor_code_hash VARCHAR(255) NULL,

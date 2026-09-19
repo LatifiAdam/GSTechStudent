@@ -239,7 +239,7 @@ private fun SuperAdminHome(container: AppContainer) {
         )
     } ?: emptyList()
 
-    val maxCount = entries.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
+    val totalUsers = counts?.total?.coerceAtLeast(1) ?: 1
 
     Column(
         modifier = Modifier
@@ -331,18 +331,26 @@ private fun SuperAdminHome(container: AppContainer) {
                 }
 
                 entries.forEachIndexed { index, entry ->
-                    val progress by animateFloatAsState(
-                        targetValue = (entry.second.toFloat() / maxCount.toFloat()).coerceIn(0f, 1f),
+                    val progress = (entry.second.toFloat() / totalUsers.toFloat()).coerceIn(0f, 1f)
+                    val animatedProgress by animateFloatAsState(
+                        targetValue = progress,
                         animationSpec = tween(650, delayMillis = index * 55),
                         label = "accountProgress_$index"
                     )
+                    val percentage = (progress * 100f).let {
+                        if (it >= 10f) it.toInt().toString() else String.format(java.util.Locale.US, "%.1f", it)
+                    }
                     Column(Modifier.padding(vertical = 5.dp)) {
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(entry.first, color = GSTextPrimary, fontWeight = FontWeight.Medium)
-                            Text(entry.second.toString(), color = GSBluePrimary, fontWeight = FontWeight.Bold)
+                            Text(
+                                "${entry.second} / ${counts?.total ?: 0} (${percentage}%)",
+                                color = GSBluePrimary,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                         Spacer(Modifier.height(5.dp))
                         LinearProgressIndicator(

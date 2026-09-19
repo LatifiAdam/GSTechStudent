@@ -145,9 +145,54 @@ export class UsersController {
   }
 
 
+  @Post(':id/profile-image')
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: { fileSize: 2 * 1024 * 1024 },
+  }))
+  async uploadUserProfileImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: any,
+  ) {
+    if (req.user.userId !== id) {
+      if ([Role.SUPER_ADMIN, Role.DF].includes(req.user.role as Role)) {
+        // unrestricted administrative edit
+      } else if ([Role.SRIO, Role.SCQ].includes(req.user.role as Role)) {
+        const [actor, target] = await Promise.all([
+          this.service.findOne(req.user.userId),
+          this.service.findOne(id),
+        ]);
+        if (actor?.region && target?.region && !this.service.regionsMatch(actor.region, target.region)) {
+          throw new ForbiddenException('Utilisateur hors de votre région');
+        }
+        if (![Role.GESTIONNAIRE, Role.DIRECTEUR].includes(target?.role as Role)) {
+          throw new ForbiddenException('Utilisateur hors de votre périmètre');
+        }
+      } else if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(req.user.role as Role)) {
+        const allowed = await this.service.canManageUserInEstablishment(req.user.userId, id, req.user.role);
+        if (!allowed) throw new ForbiddenException('Modification non autorisée hors de votre établissement');
+      } else {
+        throw new ForbiddenException('Vous ne pouvez modifier que votre propre photo de profil');
+      }
+    }
+    return this.service.updateProfileImage(id, file);
+  }
+
   @Get(':id/profile-image')
   async getProfileImage(@Param('id') id: string, @Req() req: any, @Res() res: Response) {
-    if (req.user.userId !== id && ![Role.SUPER_ADMIN, Role.DF].includes(req.user.role as Role)) {
+    if (req.user.userId !== id && [Role.SRIO, Role.SCQ].includes(req.user.role as Role)) {
+      const [actor, target] = await Promise.all([
+        this.service.findOne(req.user.userId),
+        this.service.findOne(id),
+      ]);
+      if (actor?.region && target?.region && !this.service.regionsMatch(actor.region, target.region)) {
+        throw new ForbiddenException('Utilisateur hors de votre région');
+      }
+    } else if (req.user.userId !== id && [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(req.user.role as Role)) {
+      const allowed = await this.service.canManageUserInEstablishment(req.user.userId, id, req.user.role);
+      if (!allowed) throw new ForbiddenException('Accès non autorisé à cette photo de profil');
+    } else if (req.user.userId !== id && ![Role.SUPER_ADMIN, Role.DF].includes(req.user.role as Role)) {
       throw new ForbiddenException('Accès non autorisé à cette photo de profil');
     }
     const result = await this.service.getProfileImage(id);
