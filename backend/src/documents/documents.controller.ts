@@ -31,7 +31,15 @@ export class DocumentsController {
 
   @Roles(Role.GESTIONNAIRE)
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', {
+limits: {
+  fileSize: 5 * 1024 * 1024,
+  fieldNameSize: 100,
+  fields: 10,
+  files: 1,
+  parts: 11,
+},
+}))
   upload(@UploadedFile() file: Express.Multer.File, @Body('nomDocument') nomDocument: string, @Req() req: any) {
     return this.service.upload(file, nomDocument, req.user.userId);
   }

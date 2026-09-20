@@ -3,7 +3,7 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://192.168.1.19:3000/api/v1/").get()
+val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://192.168.1.101:3000/api/v1/").get()
 
 android {
     namespace = "com.gstech.student"
