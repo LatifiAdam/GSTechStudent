@@ -135,7 +135,13 @@ export class UsersController {
   @Post('me/profile-image')
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
-    limits: { fileSize: 2 * 1024 * 1024 },
+    limits: {
+      fileSize: 2 * 1024 * 1024,
+      fieldNameSize: 100,
+      fields: 5,
+      files: 1,
+      parts: 6,
+    },
   }))
   async uploadProfileImage(
     @UploadedFile() file: Express.Multer.File,
@@ -148,7 +154,13 @@ export class UsersController {
   @Post(':id/profile-image')
   @UseInterceptors(FileInterceptor('file', {
     storage: memoryStorage(),
-    limits: { fileSize: 2 * 1024 * 1024 },
+    limits: {
+      fileSize: 2 * 1024 * 1024,
+      fieldNameSize: 100,
+      fields: 5,
+      files: 1,
+      parts: 6,
+    },
   }))
   async uploadUserProfileImage(
     @Param('id') id: string,

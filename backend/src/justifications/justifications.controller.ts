@@ -20,7 +20,16 @@ export class JustificationsController {
   // Rôle(s) autorisé(s) : Étudiant
   @Roles(Role.stagiaire)
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('file', {
+    storage: memoryStorage(),
+    limits: {
+      fileSize: 5 * 1024 * 1024,
+      fieldNameSize: 100,
+      fields: 10,
+      files: 1,
+      parts: 11,
+    },
+  }))
   uploadAttachment(@UploadedFile() file: Express.Multer.File) {
     return this.service.uploadAttachment(file);
   }

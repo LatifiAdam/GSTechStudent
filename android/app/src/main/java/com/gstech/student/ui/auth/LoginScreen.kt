@@ -4,22 +4,25 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.gstech.student.R
 import com.gstech.student.data.AppContainer
 import com.gstech.student.model.Role
 import com.gstech.student.ui.theme.*
@@ -42,18 +45,29 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Box(
-                Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(GSBluePrimary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.School, contentDescription = null, tint = Color.White)
-            }
-            Spacer(Modifier.height(10.dp))
-            Text("GSTech", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 26.sp)
-            Text("SIS PLATFORM", color = GSTeal, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+            Image(
+                painter = painterResource(R.drawable.logo_v5),
+                contentDescription = "GSTechStudent logo",
+                modifier = Modifier.size(108.dp),
+                contentScale = ContentScale.Fit,
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
+                "GSTechStudent",
+                color = GSBluePrimary,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 28.sp,
+                letterSpacing = 0.4.sp,
+            )
+            Text(
+                "STUDENT INFORMATION SYSTEM",
+                color = GSTeal,
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 11.sp,
+                letterSpacing = 1.35.sp,
+            )
         }
 
         Surface(
@@ -62,11 +76,20 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
             shadowElevation = 8.dp,
         ) {
             Column(Modifier.padding(24.dp)) {
-                Text("Welcome Back", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
+                Text(
+                    "Welcome Back",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.2).sp,
+                    ),
+                    color = GSTextPrimary,
+                )
                 Text(
                     "Sign in to manage your student journey",
                     color = GSTextSecondary,
                     modifier = Modifier.padding(top = 4.dp, bottom = 20.dp),
+                    fontFamily = FontFamily.SansSerif,
                 )
 
                 OutlinedTextField(
