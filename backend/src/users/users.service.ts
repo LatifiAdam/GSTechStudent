@@ -4,17 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 
-import {
-  InjectDataSource,
-  InjectRepository,
-} from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
-import {
-  DataSource,
-  Repository,
-  QueryFailedError,
-  Not,
-} from 'typeorm';
+import { DataSource, Repository, QueryFailedError, Not } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 
@@ -75,9 +67,19 @@ export class UsersService {
   // ============================================================
 
   async findAll(query: QueryUsersDto, actorId?: string, actorRole?: Role) {
-    const actor = actorId ? await this.utilisateurRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
-    const actorG = actorId ? await this.gestionnaireRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
-    const actorD = actorId ? await this.directeurRepo.findOne({ where: { idUtilisateur: actorId } }) : null;
+    const actor = actorId
+      ? await this.utilisateurRepo.findOne({
+          where: { idUtilisateur: actorId },
+        })
+      : null;
+    const actorG = actorId
+      ? await this.gestionnaireRepo.findOne({
+          where: { idUtilisateur: actorId },
+        })
+      : null;
+    const actorD = actorId
+      ? await this.directeurRepo.findOne({ where: { idUtilisateur: actorId } })
+      : null;
     const isRegionalActor = [Role.SRIO, Role.SCQ].includes(actorRole as Role);
     const scopeRegion = isRegionalActor ? actor?.region : null;
     if (isRegionalActor && !scopeRegion) {
@@ -85,12 +87,23 @@ export class UsersService {
       // has no region attached to the account.
       return [];
     }
-    const scopeEfp = [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole as Role) ? (actorD?.etablissement as any)?.idEtablissement ?? actorG?.idEtablissement : null;
+    const scopeEfp = [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(
+      actorRole as Role,
+    )
+      ? ((actorD?.etablissement as any)?.idEtablissement ??
+        actorG?.idEtablissement)
+      : null;
     if (!query.role) {
-      const users = await this.utilisateurRepo.find({ where: { isActive: true } });
+      const users = await this.utilisateurRepo.find({
+        where: { isActive: true },
+      });
 
-      const rows = await Promise.all(users.map((user) => this.buildUserResponse(user)));
-      return rows.filter((u: any) => this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp));
+      const rows = await Promise.all(
+        users.map((user) => this.buildUserResponse(user)),
+      );
+      return rows.filter((u: any) =>
+        this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp),
+      );
     }
 
     switch (query.role) {
@@ -99,10 +112,9 @@ export class UsersService {
       // --------------------------------------------------------
 
       case Role.FORMATEUR: {
-        const formateurs =
-          await this.formateurRepo.find({
-            relations: ['utilisateur'],
-          });
+        const formateurs = await this.formateurRepo.find({
+          relations: ['utilisateur'],
+        });
 
         const rows = formateurs.map((formateur) => ({
           idUtilisateur: formateur.idUtilisateur,
@@ -113,23 +125,22 @@ export class UsersService {
 
           email: formateur.utilisateur.email,
 
-          dateCreation:
-            formateur.utilisateur.dateCreation,
+          dateCreation: formateur.utilisateur.dateCreation,
 
           cin: formateur.utilisateur.cin,
 
-          telephone:
-            formateur.utilisateur.telephone,
+          telephone: formateur.utilisateur.telephone,
 
-          adresse:
-            formateur.utilisateur.adresse,
+          adresse: formateur.utilisateur.adresse,
 
           role: Role.FORMATEUR,
 
           module: formateur.module,
           idEtablissement: formateur.idEtablissement,
         }));
-        return rows.filter((u: any) => this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp));
+        return rows.filter((u: any) =>
+          this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp),
+        );
       }
 
       // --------------------------------------------------------
@@ -137,64 +148,48 @@ export class UsersService {
       // --------------------------------------------------------
 
       case Role.stagiaire: {
-        const stagiaires =
-          await this.stagiaireRepo.find({
-            relations: [
-              'utilisateur',
-              'classe',
-            ],
-          });
+        const stagiaires = await this.stagiaireRepo.find({
+          relations: ['utilisateur', 'classe'],
+        });
 
         const rows = stagiaires.map((stagiaire) => ({
-          idUtilisateur:
-            stagiaire.idUtilisateur,
+          idUtilisateur: stagiaire.idUtilisateur,
 
-          nom:
-            stagiaire.utilisateur.nom,
+          nom: stagiaire.utilisateur.nom,
 
-          prenom:
-            stagiaire.utilisateur.prenom,
+          prenom: stagiaire.utilisateur.prenom,
 
-          email:
-            stagiaire.utilisateur.email,
+          email: stagiaire.utilisateur.email,
 
-          dateCreation:
-            stagiaire.utilisateur.dateCreation,
+          dateCreation: stagiaire.utilisateur.dateCreation,
 
-          cin:
-            stagiaire.utilisateur.cin,
+          cin: stagiaire.utilisateur.cin,
 
-          telephone:
-            stagiaire.utilisateur.telephone,
+          telephone: stagiaire.utilisateur.telephone,
 
-          adresse:
-            stagiaire.utilisateur.adresse,
+          adresse: stagiaire.utilisateur.adresse,
 
           role: Role.stagiaire,
 
-          numerostagiaire:
-            stagiaire.numerostagiaire,
+          numerostagiaire: stagiaire.numerostagiaire,
 
-          promotion:
-            stagiaire.promotion,
+          promotion: stagiaire.promotion,
 
-          idClasse:
-            stagiaire.idClasse,
+          idClasse: stagiaire.idClasse,
 
-          idEtablissement:
-            stagiaire.idEtablissement,
+          idEtablissement: stagiaire.idEtablissement,
 
           classe: stagiaire.classe
             ? {
-                idClasse:
-                  stagiaire.classe.idClasse,
+                idClasse: stagiaire.classe.idClasse,
 
-                nomClasse:
-                  stagiaire.classe.nomClasse,
+                nomClasse: stagiaire.classe.nomClasse,
               }
             : null,
         }));
-        return rows.filter((u: any) => this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp));
+        return rows.filter((u: any) =>
+          this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp),
+        );
       }
 
       // --------------------------------------------------------
@@ -202,50 +197,43 @@ export class UsersService {
       // --------------------------------------------------------
 
       case Role.SUPER_ADMIN: {
-        const administrateurs =
-          await this.administrateurRepo.find({
-            relations: ['utilisateur'],
-          });
+        const administrateurs = await this.administrateurRepo.find({
+          relations: ['utilisateur'],
+        });
 
-        return administrateurs.map(
-          (administrateur) => ({
-            idUtilisateur:
-              administrateur.idUtilisateur,
+        return administrateurs.map((administrateur) => ({
+          idUtilisateur: administrateur.idUtilisateur,
 
-            nom:
-              administrateur.utilisateur.nom,
+          nom: administrateur.utilisateur.nom,
 
-            prenom:
-              administrateur.utilisateur.prenom,
+          prenom: administrateur.utilisateur.prenom,
 
-            email:
-              administrateur.utilisateur.email,
+          email: administrateur.utilisateur.email,
 
-            dateCreation:
-              administrateur.utilisateur.dateCreation,
+          dateCreation: administrateur.utilisateur.dateCreation,
 
-            cin:
-              administrateur.utilisateur.cin,
+          cin: administrateur.utilisateur.cin,
 
-            telephone:
-              administrateur.utilisateur.telephone,
+          telephone: administrateur.utilisateur.telephone,
 
-            adresse:
-              administrateur.utilisateur.adresse,
+          adresse: administrateur.utilisateur.adresse,
 
-            role:
-              Role.SUPER_ADMIN,
+          role: Role.SUPER_ADMIN,
 
-            niveauAcces:
-              administrateur.niveauAcces,
-          }),
-        );
+          niveauAcces: administrateur.niveauAcces,
+        }));
       }
 
       case Role.DIRECTEUR: {
-        const users = await this.utilisateurRepo.find({ where: { role: query.role } });
-        const rows = await Promise.all(users.map((user) => this.buildUserResponse(user)));
-        return rows.filter((u: any) => this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp));
+        const users = await this.utilisateurRepo.find({
+          where: { role: query.role },
+        });
+        const rows = await Promise.all(
+          users.map((user) => this.buildUserResponse(user)),
+        );
+        return rows.filter((u: any) =>
+          this.inScopeResponse(u, actorRole, scopeRegion, scopeEfp),
+        );
       }
 
       case Role.GESTIONNAIRE: {
@@ -278,49 +266,45 @@ export class UsersService {
   // ============================================================
 
   async findOne(id: string) {
-    const user =
-      await this.utilisateurRepo.findOne({
-        where: {
-          idUtilisateur: id,
-        },
-      });
+    const user = await this.utilisateurRepo.findOne({
+      where: {
+        idUtilisateur: id,
+      },
+    });
 
     if (!user) {
-      throw new NotFoundException(
-        'Utilisateur introuvable',
-      );
+      throw new NotFoundException('Utilisateur introuvable');
     }
 
-    const [
-      formateur,
-      stagiaire,
-      administrateur,
-      directeur,
-      gestionnaire,
-    ] = await Promise.all([
-      this.formateurRepo.findOne({
-        where: {
-          idUtilisateur: id,
-        },
-      }),
+    const [formateur, stagiaire, administrateur, directeur, gestionnaire] =
+      await Promise.all([
+        this.formateurRepo.findOne({
+          where: {
+            idUtilisateur: id,
+          },
+        }),
 
-      this.stagiaireRepo.findOne({
-        where: {
-          idUtilisateur: id,
-        },
-        relations: ['classe'],
-      }),
+        this.stagiaireRepo.findOne({
+          where: {
+            idUtilisateur: id,
+          },
+          relations: ['classe'],
+        }),
 
-      this.administrateurRepo.findOne({ where: { idUtilisateur: id } }),
-      this.directeurRepo.findOne({ where: { idUtilisateur: id } }),
-      this.gestionnaireRepo.findOne({ where: { idUtilisateur: id } }),
-    ]);
+        this.administrateurRepo.findOne({ where: { idUtilisateur: id } }),
+        this.directeurRepo.findOne({ where: { idUtilisateur: id } }),
+        this.gestionnaireRepo.findOne({ where: { idUtilisateur: id } }),
+      ]);
 
     // Resolve role-specific accounts before generic student/formateur data.
     // A legacy account can have a stale `utilisateur.role` value, so the
     // dedicated role tables remain authoritative.
     if (administrateur) {
-      return { ...user, role: Role.SUPER_ADMIN, niveauAcces: administrateur.niveauAcces };
+      return {
+        ...user,
+        role: Role.SUPER_ADMIN,
+        niveauAcces: administrateur.niveauAcces,
+      };
     }
     if (directeur) {
       return { ...user, role: Role.DIRECTEUR };
@@ -339,8 +323,7 @@ export class UsersService {
 
         role: Role.FORMATEUR,
 
-        module:
-          formateur.module,
+        module: formateur.module,
       };
     }
 
@@ -354,22 +337,17 @@ export class UsersService {
 
         role: Role.stagiaire,
 
-        numerostagiaire:
-          stagiaire.numerostagiaire,
+        numerostagiaire: stagiaire.numerostagiaire,
 
-        promotion:
-          stagiaire.promotion,
+        promotion: stagiaire.promotion,
 
-        idClasse:
-          stagiaire.idClasse,
+        idClasse: stagiaire.idClasse,
 
         classe: stagiaire.classe
           ? {
-              idClasse:
-                stagiaire.classe.idClasse,
+              idClasse: stagiaire.classe.idClasse,
 
-              nomClasse:
-                stagiaire.classe.nomClasse,
+              nomClasse: stagiaire.classe.nomClasse,
             }
           : null,
       };
@@ -382,7 +360,11 @@ export class UsersService {
   // POST /users
   // ============================================================
 
-  async create(dto: CreateUserDto, creatorRole: Role = Role.SUPER_ADMIN, creatorId?: string) {
+  async create(
+    dto: CreateUserDto,
+    creatorRole: Role = Role.SUPER_ADMIN,
+    creatorId?: string,
+  ) {
     // Validate/sanitize before opening the transaction so invalid input never
     // reaches a NOT NULL / UNIQUE database constraint.
     dto.nom = dto.nom?.trim();
@@ -391,7 +373,9 @@ export class UsersService {
     dto.password = dto.password?.trim();
 
     if (!dto.nom || !dto.prenom || !dto.email || !dto.password) {
-      throw new BadRequestException('Nom, prénom, email et mot de passe sont obligatoires');
+      throw new BadRequestException(
+        'Nom, prénom, email et mot de passe sont obligatoires',
+      );
     }
 
     if (dto.role === Role.stagiaire) {
@@ -399,7 +383,9 @@ export class UsersService {
       const promotion = dto.promotion?.trim();
 
       if (!numeroStagiaire || !promotion) {
-        throw new BadRequestException('Le numéro de stagiaire et la promotion sont obligatoires');
+        throw new BadRequestException(
+          'Le numéro de stagiaire et la promotion sont obligatoires',
+        );
       }
 
       dto.numerostagiaire = numeroStagiaire;
@@ -407,33 +393,60 @@ export class UsersService {
     }
 
     try {
-      return await this.dataSource.transaction(
-        async (manager) => {
+      return await this.dataSource.transaction(async (manager) => {
         if (dto.role === Role.SUPER_ADMIN && creatorRole !== Role.SUPER_ADMIN) {
-          throw new BadRequestException('Seul un Super Admin peut créer un autre Super Admin');
+          throw new BadRequestException(
+            'Seul un Super Admin peut créer un autre Super Admin',
+          );
         }
-        if (creatorRole === Role.DIRECTEUR && ![Role.FORMATEUR].includes(dto.role)) {
-          throw new BadRequestException('Un Directeur peut uniquement créer un Formateur');
+        if (
+          creatorRole === Role.DIRECTEUR &&
+          ![Role.FORMATEUR].includes(dto.role)
+        ) {
+          throw new BadRequestException(
+            'Un Directeur peut uniquement créer un Formateur',
+          );
         }
         if (creatorRole === Role.GESTIONNAIRE && dto.role !== Role.stagiaire) {
-          throw new BadRequestException('Un Gestionnaire peut uniquement créer un Stagiaire');
+          throw new BadRequestException(
+            'Un Gestionnaire peut uniquement créer un Stagiaire',
+          );
         }
         if (creatorRole === Role.SRIO && dto.role !== Role.GESTIONNAIRE) {
-          throw new BadRequestException('Un SRIO peut uniquement créer un Gestionnaire');
+          throw new BadRequestException(
+            'Un SRIO peut uniquement créer un Gestionnaire',
+          );
         }
         if (creatorRole === Role.SCQ && dto.role !== Role.DIRECTEUR) {
-          throw new BadRequestException('Un SCQ peut uniquement créer un Directeur');
+          throw new BadRequestException(
+            'Un SCQ peut uniquement créer un Directeur',
+          );
         }
-        if (creatorRole === Role.DF && ![Role.SRIO, Role.SCQ].includes(dto.role)) {
-          throw new BadRequestException('Le DF peut uniquement créer un SRIO ou un SCQ');
+        if (
+          creatorRole === Role.DF &&
+          ![Role.SRIO, Role.SCQ].includes(dto.role)
+        ) {
+          throw new BadRequestException(
+            'Le DF peut uniquement créer un SRIO ou un SCQ',
+          );
         }
-        if ((creatorRole === Role.SRIO && dto.role === Role.GESTIONNAIRE) || (creatorRole === Role.SCQ && dto.role === Role.DIRECTEUR)) {
-          const creator = await manager.findOne(Utilisateur, { where: { idUtilisateur: creatorId } });
-          if (!creator?.region) throw new BadRequestException('La région du compte créateur est introuvable');
+        if (
+          (creatorRole === Role.SRIO && dto.role === Role.GESTIONNAIRE) ||
+          (creatorRole === Role.SCQ && dto.role === Role.DIRECTEUR)
+        ) {
+          const creator = await manager.findOne(Utilisateur, {
+            where: { idUtilisateur: creatorId },
+          });
+          if (!creator?.region)
+            throw new BadRequestException(
+              'La région du compte créateur est introuvable',
+            );
           dto.region = creator.region;
         }
         if (creatorRole === Role.DIRECTEUR && false) {
-          throw new BadRequestException('Un Directeur peut uniquement créer un Gestionnaire, un Formateur ou un Étudiant');
+          throw new BadRequestException(
+            'Un Directeur peut uniquement créer un Gestionnaire, un Formateur ou un Étudiant',
+          );
         }
         // `utilisateur.region` is a foreign-key to the canonical region code
         // (RSK, CS, TTA, FM, M, OR, BS, D, SMD, GON). Clients may send either
@@ -446,14 +459,18 @@ export class UsersService {
           );
 
           if (!regionRow?.length) {
-            throw new BadRequestException('Région invalide. Sélectionnez une des dix régions officielles.');
+            throw new BadRequestException(
+              'Région invalide. Sélectionnez une des dix régions officielles.',
+            );
           }
 
           dto.region = regionRow[0].region;
         }
 
         if ([Role.SRIO, Role.SCQ].includes(dto.role) && !dto.region) {
-          throw new BadRequestException('La région est obligatoire pour un SRIO/SCQ');
+          throw new BadRequestException(
+            'La région est obligatoire pour un SRIO/SCQ',
+          );
         }
 
         if ([Role.SRIO, Role.SCQ].includes(dto.role)) {
@@ -462,42 +479,93 @@ export class UsersService {
           });
 
           if (existingRegional) {
-            throw new BadRequestException(`Un ${dto.role.toUpperCase()} existe déjà pour cette région`);
+            throw new BadRequestException(
+              `Un ${dto.role.toUpperCase()} existe déjà pour cette région`,
+            );
           }
         }
 
         let targetEfp: Etablissement | null = null;
-        if (!dto.idEtablissement && [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(creatorRole)) {
-          const creatorEfp = creatorRole === Role.DIRECTEUR
-            ? await manager.findOne(Directeur, { where: { idUtilisateur: creatorId }, relations: ['etablissement'] })
-            : await manager.findOne(Gestionnaire, { where: { idUtilisateur: creatorId } });
-          const inheritedEfpId = creatorRole === Role.DIRECTEUR ? (creatorEfp as any)?.etablissement?.idEtablissement : (creatorEfp as any)?.idEtablissement;
+        if (
+          !dto.idEtablissement &&
+          [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(creatorRole)
+        ) {
+          const creatorEfp =
+            creatorRole === Role.DIRECTEUR
+              ? await manager.findOne(Directeur, {
+                  where: { idUtilisateur: creatorId },
+                  relations: ['etablissement'],
+                })
+              : await manager.findOne(Gestionnaire, {
+                  where: { idUtilisateur: creatorId },
+                });
+          const inheritedEfpId =
+            creatorRole === Role.DIRECTEUR
+              ? (creatorEfp as any)?.etablissement?.idEtablissement
+              : (creatorEfp as any)?.idEtablissement;
           if (inheritedEfpId) dto.idEtablissement = inheritedEfpId;
         }
         // SRIO and SCQ create their regional users before the EFP assignment step.
         // The establishment is assigned later from the regional EFP screen.
         if (dto.idEtablissement) {
-          targetEfp = await manager.findOne(Etablissement, { where: { idEtablissement: dto.idEtablissement } });
-          if (!targetEfp) throw new BadRequestException('Établissement introuvable');
-          if ([Role.SRIO, Role.SCQ].includes(creatorRole) && targetEfp.region !== (await manager.findOne(Utilisateur,{where:{idUtilisateur:creatorId}}))?.region) {
+          targetEfp = await manager.findOne(Etablissement, {
+            where: { idEtablissement: dto.idEtablissement },
+          });
+          if (!targetEfp)
+            throw new BadRequestException('Établissement introuvable');
+          if (
+            [Role.SRIO, Role.SCQ].includes(creatorRole) &&
+            targetEfp.region !==
+              (
+                await manager.findOne(Utilisateur, {
+                  where: { idUtilisateur: creatorId },
+                })
+              )?.region
+          ) {
             throw new BadRequestException('Établissement hors de votre région');
           }
           if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(creatorRole)) {
-            const creator = await manager.findOne(Utilisateur,{where:{idUtilisateur:creatorId}});
-            const creatorEfp = creatorRole === Role.DIRECTEUR ? await manager.findOne(Directeur,{where:{idUtilisateur:creatorId}, relations:['etablissement']}) : await manager.findOne(Gestionnaire,{where:{idUtilisateur:creatorId}});
-            const creatorEfpId = creatorRole === Role.DIRECTEUR ? (creatorEfp as any)?.etablissement?.idEtablissement : (creatorEfp as any)?.idEtablissement;
-            if (!creator || creatorEfpId !== dto.idEtablissement) throw new BadRequestException('Établissement hors de votre périmètre');
+            const creator = await manager.findOne(Utilisateur, {
+              where: { idUtilisateur: creatorId },
+            });
+            const creatorEfp =
+              creatorRole === Role.DIRECTEUR
+                ? await manager.findOne(Directeur, {
+                    where: { idUtilisateur: creatorId },
+                    relations: ['etablissement'],
+                  })
+                : await manager.findOne(Gestionnaire, {
+                    where: { idUtilisateur: creatorId },
+                  });
+            const creatorEfpId =
+              creatorRole === Role.DIRECTEUR
+                ? (creatorEfp as any)?.etablissement?.idEtablissement
+                : (creatorEfp as any)?.idEtablissement;
+            if (!creator || creatorEfpId !== dto.idEtablissement)
+              throw new BadRequestException(
+                'Établissement hors de votre périmètre',
+              );
           }
         }
 
-        if (targetEfp && [Role.DIRECTEUR, Role.GESTIONNAIRE, Role.FORMATEUR, Role.stagiaire].includes(dto.role)) {
+        if (
+          targetEfp &&
+          [
+            Role.DIRECTEUR,
+            Role.GESTIONNAIRE,
+            Role.FORMATEUR,
+            Role.stagiaire,
+          ].includes(dto.role)
+        ) {
           dto.region = targetEfp.region;
         }
 
         // A Directeur created by Super Admin needs a region before later EFP assignment.
         // A SCQ-created Directeur already inherits the SCQ region above.
         if (dto.role === Role.DIRECTEUR && !dto.region) {
-          throw new BadRequestException('La région est obligatoire pour un Directeur avant son affectation à un EFP');
+          throw new BadRequestException(
+            'La région est obligatoire pour un Directeur avant son affectation à un EFP',
+          );
         }
 
         // An EFP row should already contain a canonical code, but normalize again so
@@ -518,20 +586,14 @@ export class UsersService {
         // EMAIL
         // ------------------------------------------------------
 
-        const existing =
-          await manager.findOne(
-            Utilisateur,
-            {
-              where: {
-                email: dto.email,
-              },
-            },
-          );
+        const existing = await manager.findOne(Utilisateur, {
+          where: {
+            email: dto.email,
+          },
+        });
 
         if (existing) {
-          throw new BadRequestException(
-            'Un compte existe déjà avec cet email',
-          );
+          throw new BadRequestException('Un compte existe déjà avec cet email');
         }
 
         if (dto.role === Role.stagiaire) {
@@ -550,40 +612,27 @@ export class UsersService {
         // If the admin supplies an ID, keep it; otherwise TypeORM generates the UUID.
         // ------------------------------------------------------
 
-        const utilisateur =
-          manager.create(
-            Utilisateur,
-            {
-              ...(dto.idUtilisateur ? { idUtilisateur: dto.idUtilisateur } : {}),
-              nom: dto.nom,
-              prenom: dto.prenom,
-              email: dto.email,
+        const utilisateur = manager.create(Utilisateur, {
+          ...(dto.idUtilisateur ? { idUtilisateur: dto.idUtilisateur } : {}),
+          nom: dto.nom,
+          prenom: dto.prenom,
+          email: dto.email,
 
-              motDePasse:
-                await bcrypt.hash(
-                  dto.password,
-                  12,
-                ),
+          motDePasse: await bcrypt.hash(dto.password, 12),
 
-              cin:
-                dto.cin ?? null,
+          cin: dto.cin ?? null,
 
-              telephone:
-                dto.telephone ?? null,
+          telephone: dto.telephone ?? null,
 
-              adresse:
-                dto.adresse ?? null,
+          adresse: dto.adresse ?? null,
 
-              role: dto.role,
-              isActive: true,
-              isBootstrap: false,
-              region: dto.region ?? null,
-            },
-          );
+          role: dto.role,
+          isActive: true,
+          isBootstrap: false,
+          region: dto.region ?? null,
+        });
 
-        await manager.save(
-          utilisateur,
-        );
+        await manager.save(utilisateur);
 
         // At this point TypeORM has generated:
         //
@@ -595,9 +644,7 @@ export class UsersService {
 
         if (
           !utilisateur.idUtilisateur ||
-          !this.isUuid(
-            utilisateur.idUtilisateur,
-          )
+          !this.isUuid(utilisateur.idUtilisateur)
         ) {
           throw new BadRequestException(
             'Le serveur n’a pas généré un UUID valide pour l’utilisateur',
@@ -610,11 +657,13 @@ export class UsersService {
 
         switch (dto.role) {
           case Role.FORMATEUR: {
-            const formateur = manager.create(Formateur, { idUtilisateur: utilisateur.idUtilisateur, module: dto.module, idEtablissement: dto.idEtablissement ?? null });
+            const formateur = manager.create(Formateur, {
+              idUtilisateur: utilisateur.idUtilisateur,
+              module: dto.module,
+              idEtablissement: dto.idEtablissement ?? null,
+            });
 
-            await manager.save(
-              formateur,
-            );
+            await manager.save(formateur);
 
             break;
           }
@@ -641,10 +690,16 @@ export class UsersService {
           // ----------------------------------------------------
 
           case Role.DIRECTEUR: {
-            const directeur = manager.create(Directeur, { idUtilisateur: utilisateur.idUtilisateur });
+            const directeur = manager.create(Directeur, {
+              idUtilisateur: utilisateur.idUtilisateur,
+            });
             await manager.save(directeur);
             if (dto.idEtablissement) {
-              await manager.update(Etablissement, { idEtablissement: dto.idEtablissement }, { idDirecteur: utilisateur.idUtilisateur });
+              await manager.update(
+                Etablissement,
+                { idEtablissement: dto.idEtablissement },
+                { idDirecteur: utilisateur.idUtilisateur },
+              );
             }
             break;
           }
@@ -656,7 +711,10 @@ export class UsersService {
           }
 
           case Role.GESTIONNAIRE: {
-            const gestionnaire = manager.create(Gestionnaire, { idUtilisateur: utilisateur.idUtilisateur, idEtablissement: dto.idEtablissement ?? null });
+            const gestionnaire = manager.create(Gestionnaire, {
+              idUtilisateur: utilisateur.idUtilisateur,
+              idEtablissement: dto.idEtablissement ?? null,
+            });
             await manager.save(gestionnaire);
             break;
           }
@@ -668,21 +726,13 @@ export class UsersService {
               );
             }
 
-            const administrateur =
-              manager.create(
-                Administrateur,
-                {
-                  idUtilisateur:
-                    utilisateur.idUtilisateur,
+            const administrateur = manager.create(Administrateur, {
+              idUtilisateur: utilisateur.idUtilisateur,
 
-                  niveauAcces:
-                    dto.niveauAcces,
-                },
-              );
+              niveauAcces: dto.niveauAcces,
+            });
 
-            await manager.save(
-              administrateur,
-            );
+            await manager.save(administrateur);
 
             // The temporary bootstrap account exists only until the first
             // permanent Super Admin has been created successfully.
@@ -696,39 +746,44 @@ export class UsersService {
           }
 
           default:
-            throw new BadRequestException(
-              'Rôle utilisateur invalide',
-            );
+            throw new BadRequestException('Rôle utilisateur invalide');
         }
 
+        // Resolve the creator BEFORE the bootstrap account is deleted.
+        // The bootstrap Super Admin is removed when the first permanent
+        // Super Admin is created, so its UUID must never be stored in
+        // audit_log.actor_id (the FK would become dangling).
         const creator = creatorId
-          ? await manager.findOne(Utilisateur, { where: { idUtilisateur: creatorId } })
+          ? await manager.findOne(Utilisateur, {
+              where: { idUtilisateur: creatorId },
+            })
           : null;
-        // The bootstrap Super Admin is intentionally removed after the first real
-        // Super Admin is created. Do not leave a dangling audit FK to that user.
-        const auditActorId = creator?.isBootstrap === true ? null : (creatorId ?? null);
 
-        await manager.save(AuditLog, manager.create(AuditLog, {
-          actorId: auditActorId,
-          actorRole: creatorRole,
-          action: 'CREATE',
-          entityType: 'utilisateur',
-          entityId: utilisateur.idUtilisateur,
-          region: dto.region ?? targetEfp?.region ?? null,
-          idEtablissement: dto.idEtablissement ?? null,
-          oldValue: null,
-          newValue: { role: dto.role },
-          ipAddress: null,
-        }));
+        const auditActorId =
+          creator?.isBootstrap === true ? null : (creatorId ?? null);
+
+        await manager.save(
+          AuditLog,
+          manager.create(AuditLog, {
+            actorId: auditActorId,
+            actorRole: creatorRole,
+            action: 'CREATE',
+            entityType: 'utilisateur',
+            entityId: utilisateur.idUtilisateur,
+            region: dto.region ?? targetEfp?.region ?? null,
+            idEtablissement: dto.idEtablissement ?? null,
+            oldValue: null,
+            newValue: { role: dto.role },
+            ipAddress: null,
+          }),
+        );
 
         return {
           ...utilisateur,
 
-          role:
-            dto.role,
+          role: dto.role,
         };
-      },
-    );
+      });
     } catch (error) {
       if (error instanceof QueryFailedError) {
         const driverError = error.driverError as any;
@@ -738,12 +793,16 @@ export class UsersService {
             throw new BadRequestException('Ce numéro de stagiaire existe déjà');
           }
           if (message.includes('email')) {
-            throw new BadRequestException('Un compte existe déjà avec cet email');
+            throw new BadRequestException(
+              'Un compte existe déjà avec cet email',
+            );
           }
           if (message.includes('cin')) {
             throw new BadRequestException('Ce CIN existe déjà');
           }
-          throw new BadRequestException('Données déjà utilisées ou contrainte en conflit');
+          throw new BadRequestException(
+            'Données déjà utilisées ou contrainte en conflit',
+          );
         }
       }
       throw error;
@@ -755,30 +814,54 @@ export class UsersService {
   // ============================================================
 
   async canFormateurViewStudent(formateurId: string, studentId: string) {
-    const student = await this.stagiaireRepo.findOne({ where: { idUtilisateur: studentId } });
+    const student = await this.stagiaireRepo.findOne({
+      where: { idUtilisateur: studentId },
+    });
     if (!student) return false;
-    return !!(await this.dataSource.getRepository(Affectation).findOne({ where: { idFormateur: formateurId, idClasse: student.idClasse! } }));
+    return !!(await this.dataSource.getRepository(Affectation).findOne({
+      where: { idFormateur: formateurId, idClasse: student.idClasse! },
+    }));
   }
 
-  async canManageUserInEstablishment(actorId: string, targetId: string, actorRole: Role): Promise<boolean> {
+  async canManageUserInEstablishment(
+    actorId: string,
+    targetId: string,
+    actorRole: Role,
+  ): Promise<boolean> {
     if (![Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole)) return false;
 
-    const actorG = await this.gestionnaireRepo.findOne({ where: { idUtilisateur: actorId } });
-    const actorD = await this.directeurRepo.findOne({ where: { idUtilisateur: actorId }, relations: ['etablissement'] });
-    const actorEfpId = actorRole === Role.DIRECTEUR
-      ? actorD?.etablissement?.idEtablissement
-      : actorG?.idEtablissement;
+    const actorG = await this.gestionnaireRepo.findOne({
+      where: { idUtilisateur: actorId },
+    });
+    const actorD = await this.directeurRepo.findOne({
+      where: { idUtilisateur: actorId },
+      relations: ['etablissement'],
+    });
+    const actorEfpId =
+      actorRole === Role.DIRECTEUR
+        ? actorD?.etablissement?.idEtablissement
+        : actorG?.idEtablissement;
     if (!actorEfpId) return false;
 
-    const targetG = await this.gestionnaireRepo.findOne({ where: { idUtilisateur: targetId } });
-    const targetF = await this.formateurRepo.findOne({ where: { idUtilisateur: targetId } });
-    const targetS = await this.stagiaireRepo.findOne({ where: { idUtilisateur: targetId } });
-    const targetD = await this.directeurRepo.findOne({ where: { idUtilisateur: targetId }, relations: ['etablissement'] });
+    const targetG = await this.gestionnaireRepo.findOne({
+      where: { idUtilisateur: targetId },
+    });
+    const targetF = await this.formateurRepo.findOne({
+      where: { idUtilisateur: targetId },
+    });
+    const targetS = await this.stagiaireRepo.findOne({
+      where: { idUtilisateur: targetId },
+    });
+    const targetD = await this.directeurRepo.findOne({
+      where: { idUtilisateur: targetId },
+      relations: ['etablissement'],
+    });
 
-    const targetEfpId = targetG?.idEtablissement
-      ?? targetF?.idEtablissement
-      ?? targetS?.idEtablissement
-      ?? targetD?.etablissement?.idEtablissement;
+    const targetEfpId =
+      targetG?.idEtablissement ??
+      targetF?.idEtablissement ??
+      targetS?.idEtablissement ??
+      targetD?.etablissement?.idEtablissement;
 
     if (actorRole === Role.GESTIONNAIRE && targetS) {
       return targetEfpId === actorEfpId;
@@ -789,45 +872,30 @@ export class UsersService {
     return targetEfpId === actorEfpId;
   }
 
-  async update(
-    id: string,
-    dto: UpdateUserDto,
-  ) {
-    const user =
-      await this.utilisateurRepo.findOne({
-        where: {
-          idUtilisateur: id,
-        },
-      });
+  async update(id: string, dto: UpdateUserDto) {
+    const user = await this.utilisateurRepo.findOne({
+      where: {
+        idUtilisateur: id,
+      },
+    });
 
     if (!user) {
-      throw new NotFoundException(
-        'Utilisateur introuvable',
-      );
+      throw new NotFoundException('Utilisateur introuvable');
     }
 
     // --------------------------------------------------------
     // EMAIL
     // --------------------------------------------------------
 
-    if (
-      dto.email &&
-      dto.email !== user.email
-    ) {
-      const existing =
-        await this.utilisateurRepo.findOne({
-          where: {
-            email: dto.email,
-          },
-        });
+    if (dto.email && dto.email !== user.email) {
+      const existing = await this.utilisateurRepo.findOne({
+        where: {
+          email: dto.email,
+        },
+      });
 
-      if (
-        existing &&
-        existing.idUtilisateur !== id
-      ) {
-        throw new BadRequestException(
-          'Un compte existe déjà avec cet email',
-        );
+      if (existing && existing.idUtilisateur !== id) {
+        throw new BadRequestException('Un compte existe déjà avec cet email');
       }
     }
 
@@ -836,52 +904,36 @@ export class UsersService {
     // --------------------------------------------------------
 
     Object.assign(user, {
-      nom:
-        dto.nom ?? user.nom,
+      nom: dto.nom ?? user.nom,
 
-      prenom:
-        dto.prenom ?? user.prenom,
+      prenom: dto.prenom ?? user.prenom,
 
-      email:
-        dto.email ?? user.email,
+      email: dto.email ?? user.email,
 
-      cin:
-        dto.cin ?? user.cin,
+      cin: dto.cin ?? user.cin,
 
-      telephone:
-        dto.telephone ??
-        user.telephone,
+      telephone: dto.telephone ?? user.telephone,
 
-      adresse:
-        dto.adresse ??
-        user.adresse,
+      adresse: dto.adresse ?? user.adresse,
     });
 
-    await this.utilisateurRepo.save(
-      user,
-    );
+    await this.utilisateurRepo.save(user);
 
     // --------------------------------------------------------
     // TEACHER
     // --------------------------------------------------------
 
-    if (
-      dto.module !== undefined
-    ) {
-      const formateur =
-        await this.formateurRepo.findOne({
-          where: {
-            idUtilisateur: id,
-          },
-        });
+    if (dto.module !== undefined) {
+      const formateur = await this.formateurRepo.findOne({
+        where: {
+          idUtilisateur: id,
+        },
+      });
 
       if (formateur) {
-        formateur.module =
-          dto.module;
+        formateur.module = dto.module;
 
-        await this.formateurRepo.save(
-          formateur,
-        );
+        await this.formateurRepo.save(formateur);
       }
     }
 
@@ -889,39 +941,23 @@ export class UsersService {
     // STUDENT
     // --------------------------------------------------------
 
-    if (
-      dto.numerostagiaire !==
-        undefined ||
-      dto.promotion !==
-        undefined
-    ) {
-      const stagiaire =
-        await this.stagiaireRepo.findOne({
-          where: {
-            idUtilisateur: id,
-          },
-        });
+    if (dto.numerostagiaire !== undefined || dto.promotion !== undefined) {
+      const stagiaire = await this.stagiaireRepo.findOne({
+        where: {
+          idUtilisateur: id,
+        },
+      });
 
       if (stagiaire) {
-        if (
-          dto.numerostagiaire !==
-          undefined
-        ) {
-          stagiaire.numerostagiaire =
-            dto.numerostagiaire;
+        if (dto.numerostagiaire !== undefined) {
+          stagiaire.numerostagiaire = dto.numerostagiaire;
         }
 
-        if (
-          dto.promotion !==
-          undefined
-        ) {
-          stagiaire.promotion =
-            dto.promotion;
+        if (dto.promotion !== undefined) {
+          stagiaire.promotion = dto.promotion;
         }
 
-        await this.stagiaireRepo.save(
-          stagiaire,
-        );
+        await this.stagiaireRepo.save(stagiaire);
       }
     }
 
@@ -929,24 +965,17 @@ export class UsersService {
     // ADMINISTRATOR
     // --------------------------------------------------------
 
-    if (
-      dto.niveauAcces !==
-      undefined
-    ) {
-      const administrateur =
-        await this.administrateurRepo.findOne({
-          where: {
-            idUtilisateur: id,
-          },
-        });
+    if (dto.niveauAcces !== undefined) {
+      const administrateur = await this.administrateurRepo.findOne({
+        where: {
+          idUtilisateur: id,
+        },
+      });
 
       if (administrateur) {
-        administrateur.niveauAcces =
-          dto.niveauAcces;
+        administrateur.niveauAcces = dto.niveauAcces;
 
-        await this.administrateurRepo.save(
-          administrateur,
-        );
+        await this.administrateurRepo.save(administrateur);
       }
     }
 
@@ -954,16 +983,22 @@ export class UsersService {
   }
 
   async setTwoFactor(id: string, dto: ToggleTwoFactorDto) {
-    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+    const user = await this.utilisateurRepo.findOne({
+      where: { idUtilisateur: id },
+    });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     user.twoFactorEnabled = dto.enabled;
-    if (!dto.enabled) { user.twoFactorCodeHash = null; user.twoFactorCodeExpiresAt = null; }
+    if (!dto.enabled) {
+      user.twoFactorCodeHash = null;
+      user.twoFactorCodeExpiresAt = null;
+    }
     await this.utilisateurRepo.save(user);
     return { idUtilisateur: id, twoFactorEnabled: user.twoFactorEnabled };
   }
 
   async changePassword(id: string, dto: ChangePasswordDto) {
-    const user = await this.utilisateurRepo.createQueryBuilder('u')
+    const user = await this.utilisateurRepo
+      .createQueryBuilder('u')
       .addSelect('u.motDePasse')
       .where('u.id_utilisateur = :id', { id })
       .getOne();
@@ -979,27 +1014,76 @@ export class UsersService {
   // DELETE /users/:id
   // ============================================================
 
-  async remove(id: string, requesterRole: Role = Role.SUPER_ADMIN, actorId?: string) {
-    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+  async remove(
+    id: string,
+    requesterRole: Role = Role.SUPER_ADMIN,
+    actorId?: string,
+  ) {
+    const user = await this.utilisateurRepo.findOne({
+      where: { idUtilisateur: id },
+    });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     if (actorId && [Role.SRIO, Role.SCQ].includes(requesterRole)) {
-      const actor = await this.utilisateurRepo.findOne({ where: { idUtilisateur: actorId } });
-      if (actor?.region && user.region !== actor.region) throw new BadRequestException('Utilisateur hors de votre région');
+      const actor = await this.utilisateurRepo.findOne({
+        where: { idUtilisateur: actorId },
+      });
+      if (actor?.region && user.region !== actor.region)
+        throw new BadRequestException('Utilisateur hors de votre région');
     }
-    if (actorId && [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(requesterRole)) {
-      const actorG = await this.gestionnaireRepo.findOne({ where: { idUtilisateur: actorId } });
-      const actorD = await this.directeurRepo.findOne({ where: { idUtilisateur: actorId }, relations: ['etablissement'] });
-      const actorEfp = requesterRole === Role.DIRECTEUR ? actorD?.etablissement?.idEtablissement : actorG?.idEtablissement;
-      const targetG = await this.gestionnaireRepo.findOne({ where: { idUtilisateur: id } });
-      const targetF = await this.formateurRepo.findOne({ where: { idUtilisateur: id } });
-      const targetS = await this.stagiaireRepo.findOne({ where: { idUtilisateur: id } });
-      const targetD = await this.directeurRepo.findOne({ where: { idUtilisateur: id }, relations: ['etablissement'] });
-      const targetEfp = targetG?.idEtablissement ?? targetF?.idEtablissement ?? targetS?.idEtablissement ?? targetD?.etablissement?.idEtablissement;
-      if (actorEfp && targetEfp !== actorEfp) throw new BadRequestException('Utilisateur hors de votre établissement');
+    if (
+      actorId &&
+      [Role.DIRECTEUR, Role.GESTIONNAIRE].includes(requesterRole)
+    ) {
+      const actorG = await this.gestionnaireRepo.findOne({
+        where: { idUtilisateur: actorId },
+      });
+      const actorD = await this.directeurRepo.findOne({
+        where: { idUtilisateur: actorId },
+        relations: ['etablissement'],
+      });
+      const actorEfp =
+        requesterRole === Role.DIRECTEUR
+          ? actorD?.etablissement?.idEtablissement
+          : actorG?.idEtablissement;
+      const targetG = await this.gestionnaireRepo.findOne({
+        where: { idUtilisateur: id },
+      });
+      const targetF = await this.formateurRepo.findOne({
+        where: { idUtilisateur: id },
+      });
+      const targetS = await this.stagiaireRepo.findOne({
+        where: { idUtilisateur: id },
+      });
+      const targetD = await this.directeurRepo.findOne({
+        where: { idUtilisateur: id },
+        relations: ['etablissement'],
+      });
+      const targetEfp =
+        targetG?.idEtablissement ??
+        targetF?.idEtablissement ??
+        targetS?.idEtablissement ??
+        targetD?.etablissement?.idEtablissement;
+      if (actorEfp && targetEfp !== actorEfp)
+        throw new BadRequestException(
+          'Utilisateur hors de votre établissement',
+        );
     }
     user.isActive = false;
     await this.utilisateurRepo.save(user);
-    await this.auditRepo.save(this.auditRepo.create({ actorId: actorId ?? null, actorRole: requesterRole, action: 'DEACTIVATE', entityType: 'utilisateur', entityId: id, region: user.region, idEtablissement: null, oldValue: { isActive: true, role: user.role }, newValue: { isActive: false, role: user.role }, ipAddress: null }));
+    await this.auditRepo.save(
+      this.auditRepo.create({
+        actorId: actorId ?? null,
+        actorRole: requesterRole,
+        action: 'DEACTIVATE',
+        entityType: 'utilisateur',
+        entityId: id,
+        region: user.region,
+        idEtablissement: null,
+        oldValue: { isActive: true, role: user.role },
+        newValue: { isActive: false, role: user.role },
+        ipAddress: null,
+      }),
+    );
     return { success: true, deactivated: true };
   }
 
@@ -1007,7 +1091,10 @@ export class UsersService {
    *  This keeps regional visibility stable even when legacy records contain
    *  the French display name instead of RSK/CS/TTA/etc.
    */
-  regionsMatch(a: string | null | undefined, b: string | null | undefined): boolean {
+  regionsMatch(
+    a: string | null | undefined,
+    b: string | null | undefined,
+  ): boolean {
     if (!a || !b) return false;
     const normalize = (value: string) => {
       const normalized = value
@@ -1016,26 +1103,57 @@ export class UsersService {
         .trim()
         .toLowerCase();
       const aliases: Record<string, string> = {
-        '1': 'RSK', 'rsk': 'RSK', 'rabat-sale-kenitra': 'RSK',
-        '2': 'CS', 'cs': 'CS', 'casablanca-settat': 'CS',
-        '3': 'TTA', 'tta': 'TTA', 'tanger-tetouan-al hoceima': 'TTA', 'tanger-tetouan-al-hoceima': 'TTA',
-        '4': 'FM', 'fm': 'FM', 'fes-meknes': 'FM',
-        '5': 'M', 'm': 'M', 'marrakech-safi': 'M',
-        '6': 'OR', 'or': 'OR', 'oriental': 'OR',
-        '7': 'BS', 'bs': 'BS', 'beni-mellal-khenifra': 'BS', 'beni mellal-khenifra': 'BS',
-        '8': 'D', 'd': 'D', 'draa-tafilalet': 'D',
-        '9': 'SMD', 'smd': 'SMD', 'souss-massa': 'SMD',
-        '10': 'GON', 'gon': 'GON', 'guelmim-oued noun': 'GON', 'guelmim-oued-noun': 'GON',
+        '1': 'RSK',
+        rsk: 'RSK',
+        'rabat-sale-kenitra': 'RSK',
+        '2': 'CS',
+        cs: 'CS',
+        'casablanca-settat': 'CS',
+        '3': 'TTA',
+        tta: 'TTA',
+        'tanger-tetouan-al hoceima': 'TTA',
+        'tanger-tetouan-al-hoceima': 'TTA',
+        '4': 'FM',
+        fm: 'FM',
+        'fes-meknes': 'FM',
+        '5': 'M',
+        m: 'M',
+        'marrakech-safi': 'M',
+        '6': 'OR',
+        or: 'OR',
+        oriental: 'OR',
+        '7': 'BS',
+        bs: 'BS',
+        'beni-mellal-khenifra': 'BS',
+        'beni mellal-khenifra': 'BS',
+        '8': 'D',
+        d: 'D',
+        'draa-tafilalet': 'D',
+        '9': 'SMD',
+        smd: 'SMD',
+        'souss-massa': 'SMD',
+        '10': 'GON',
+        gon: 'GON',
+        'guelmim-oued noun': 'GON',
+        'guelmim-oued-noun': 'GON',
       };
       return aliases[normalized] ?? value.trim().toUpperCase();
     };
     return normalize(a) === normalize(b);
   }
 
-  private inScopeResponse(user: any, actorRole?: Role, region?: string | null, efpId?: string | null): boolean {
-    if (!actorRole || [Role.SUPER_ADMIN, Role.DF].includes(actorRole)) return true;
-    if ([Role.SRIO, Role.SCQ].includes(actorRole)) return !region || this.regionsMatch(region, user.region);
-    if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole)) return !efpId || user.idEtablissement === efpId;
+  private inScopeResponse(
+    user: any,
+    actorRole?: Role,
+    region?: string | null,
+    efpId?: string | null,
+  ): boolean {
+    if (!actorRole || [Role.SUPER_ADMIN, Role.DF].includes(actorRole))
+      return true;
+    if ([Role.SRIO, Role.SCQ].includes(actorRole))
+      return !region || this.regionsMatch(region, user.region);
+    if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(actorRole))
+      return !efpId || user.idEtablissement === efpId;
     return user.role === actorRole;
   }
 
@@ -1044,13 +1162,26 @@ export class UsersService {
   // ============================================================
 
   private async buildUserResponse(user: Utilisateur) {
-    const [formateur, stagiaire, administrateur, directeur, gestionnaire] = await Promise.all([
-      this.formateurRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
-      this.stagiaireRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
-      this.administrateurRepo.findOne({ where: { idUtilisateur: user.idUtilisateur } }),
-      this.directeurRepo.findOne({ where: { idUtilisateur: user.idUtilisateur }, relations: ['etablissement'] }),
-      this.gestionnaireRepo.findOne({ where: { idUtilisateur: user.idUtilisateur }, relations: ['etablissement'] }),
-    ]);
+    const [formateur, stagiaire, administrateur, directeur, gestionnaire] =
+      await Promise.all([
+        this.formateurRepo.findOne({
+          where: { idUtilisateur: user.idUtilisateur },
+        }),
+        this.stagiaireRepo.findOne({
+          where: { idUtilisateur: user.idUtilisateur },
+        }),
+        this.administrateurRepo.findOne({
+          where: { idUtilisateur: user.idUtilisateur },
+        }),
+        this.directeurRepo.findOne({
+          where: { idUtilisateur: user.idUtilisateur },
+          relations: ['etablissement'],
+        }),
+        this.gestionnaireRepo.findOne({
+          where: { idUtilisateur: user.idUtilisateur },
+          relations: ['etablissement'],
+        }),
+      ]);
 
     let role: Role | null = user.role ?? null;
     if (role === Role.stagiaire && !stagiaire) role = null;
@@ -1076,12 +1207,18 @@ export class UsersService {
       cin: user.cin,
       telephone: user.telephone,
       adresse: user.adresse,
-      region: user.region
-        ?? gestionnaire?.etablissement?.region
-        ?? directeur?.etablissement?.region
-        ?? null,
+      region:
+        user.region ??
+        gestionnaire?.etablissement?.region ??
+        directeur?.etablissement?.region ??
+        null,
       isActive: user.isActive,
-      idEtablissement: formateur?.idEtablissement ?? stagiaire?.idEtablissement ?? gestionnaire?.idEtablissement ?? directeur?.etablissement?.idEtablissement ?? null,
+      idEtablissement:
+        formateur?.idEtablissement ??
+        stagiaire?.idEtablissement ??
+        gestionnaire?.idEtablissement ??
+        directeur?.etablissement?.idEtablissement ??
+        null,
       role,
       module: formateur?.module ?? null,
       numerostagiaire: stagiaire?.numerostagiaire ?? null,
@@ -1103,7 +1240,10 @@ export class UsersService {
   }
 
   async updateProfileImage(id: string, file: Express.Multer.File) {
-    if (!file) throw new BadRequestException('Veuillez sélectionner une image de profil');
+    if (!file)
+      throw new BadRequestException(
+        'Veuillez sélectionner une image de profil',
+      );
 
     const allowed: Record<string, string> = {
       'image/jpeg': 'jpg',
@@ -1111,7 +1251,10 @@ export class UsersService {
       'image/webp': 'webp',
     };
     const ext = allowed[file.mimetype];
-    if (!ext) throw new BadRequestException('Format d’image non supporté (JPG, PNG ou WEBP uniquement)');
+    if (!ext)
+      throw new BadRequestException(
+        'Format d’image non supporté (JPG, PNG ou WEBP uniquement)',
+      );
     if (!file.buffer?.length) throw new BadRequestException('L’image est vide');
 
     const signatures: Record<string, Buffer> = {
@@ -1121,21 +1264,35 @@ export class UsersService {
     };
     const signature = signatures[file.mimetype];
     if (!file.buffer.subarray(0, signature.length).equals(signature)) {
-      throw new BadRequestException('Le contenu du fichier ne correspond pas à son format déclaré');
+      throw new BadRequestException(
+        'Le contenu du fichier ne correspond pas à son format déclaré',
+      );
     }
-    if (file.mimetype === 'image/webp' && file.buffer.length >= 12 && file.buffer.subarray(8, 12).toString() !== 'WEBP') {
+    if (
+      file.mimetype === 'image/webp' &&
+      file.buffer.length >= 12 &&
+      file.buffer.subarray(8, 12).toString() !== 'WEBP'
+    ) {
       throw new BadRequestException('Image WEBP invalide');
     }
 
-    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+    const user = await this.utilisateurRepo.findOne({
+      where: { idUtilisateur: id },
+    });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
-    const key = await this.storage.save('profiles', `${id}.${ext}`, file.buffer, file.mimetype);
+    const key = await this.storage.save(
+      'profiles',
+      `${id}.${ext}`,
+      file.buffer,
+      file.mimetype,
+    );
     const oldKey = user.profileImageKey;
     user.profileImageKey = key;
     await this.utilisateurRepo.save(user);
 
-    if (oldKey && oldKey !== key) await this.storage.remove(oldKey).catch(() => undefined);
+    if (oldKey && oldKey !== key)
+      await this.storage.remove(oldKey).catch(() => undefined);
 
     return {
       success: true,
@@ -1143,10 +1300,15 @@ export class UsersService {
     };
   }
 
-  async getProfileImage(id: string): Promise<{ buffer: Buffer; contentType: string }> {
-    const user = await this.utilisateurRepo.findOne({ where: { idUtilisateur: id } });
+  async getProfileImage(
+    id: string,
+  ): Promise<{ buffer: Buffer; contentType: string }> {
+    const user = await this.utilisateurRepo.findOne({
+      where: { idUtilisateur: id },
+    });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
-    if (!user.profileImageKey) throw new NotFoundException('Aucune photo de profil enregistrée');
+    if (!user.profileImageKey)
+      throw new NotFoundException('Aucune photo de profil enregistrée');
 
     const contentType = user.profileImageKey.toLowerCase().endsWith('.png')
       ? 'image/png'
@@ -1159,5 +1321,4 @@ export class UsersService {
       contentType,
     };
   }
-
 }
