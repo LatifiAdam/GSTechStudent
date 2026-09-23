@@ -6,7 +6,7 @@ import {
 
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 
-import { DataSource, Repository, QueryFailedError, Not } from 'typeorm';
+import { DataSource, Repository, QueryFailedError } from 'typeorm';
 
 import * as bcrypt from 'bcrypt';
 
@@ -651,6 +651,20 @@ export class UsersService {
           );
         }
 
+        // Capture the creator BEFORE any bootstrap account deletion.
+        // The bootstrap account will be removed only after the audit row is
+        // successfully inserted, and its audit actor must be NULL because
+        // audit_log.actor_id references utilisateur.id_utilisateur.
+        const creator = creatorId
+          ? await manager.findOne(Utilisateur, {
+              where: { idUtilisateur: creatorId },
+            })
+          : null;
+        const creatorIsBootstrap = creator?.isBootstrap === true;
+        const auditActorId = creatorIsBootstrap
+          ? null
+          : (creatorId ?? null);
+
         // ------------------------------------------------------
         // TEACHER
         // ------------------------------------------------------
@@ -734,33 +748,14 @@ export class UsersService {
 
             await manager.save(administrateur);
 
-            // The temporary bootstrap account exists only until the first
-            // permanent Super Admin has been created successfully.
-            await manager.delete(Utilisateur, {
-              role: Role.SUPER_ADMIN,
-              isBootstrap: true,
-              idUtilisateur: Not(utilisateur.idUtilisateur),
-            });
-
+            // The bootstrap account is deleted only after the audit log has
+            // been inserted successfully, below.
             break;
           }
 
           default:
             throw new BadRequestException('Rôle utilisateur invalide');
         }
-
-        // Resolve the creator BEFORE the bootstrap account is deleted.
-        // The bootstrap Super Admin is removed when the first permanent
-        // Super Admin is created, so its UUID must never be stored in
-        // audit_log.actor_id (the FK would become dangling).
-        const creator = creatorId
-          ? await manager.findOne(Utilisateur, {
-              where: { idUtilisateur: creatorId },
-            })
-          : null;
-
-        const auditActorId =
-          creator?.isBootstrap === true ? null : (creatorId ?? null);
 
         await manager.save(
           AuditLog,
@@ -777,6 +772,15 @@ export class UsersService {
             ipAddress: null,
           }),
         );
+
+        // Once the audit entry is safely stored, remove the temporary bootstrap
+        // account that created the first permanent Super Admin.
+        if (creatorIsBootstrap && creatorId) {
+          await manager.delete(Utilisateur, {
+            idUtilisateur: creatorId,
+            isBootstrap: true,
+          });
+        }
 
         return {
           ...utilisateur,
@@ -818,9 +822,11 @@ export class UsersService {
       where: { idUtilisateur: studentId },
     });
     if (!student) return false;
-    return !!(await this.dataSource.getRepository(Affectation).findOne({
-      where: { idFormateur: formateurId, idClasse: student.idClasse! },
-    }));
+    return !!(await this.dataSource
+      .getRepository(Affectation)
+      .findOne({
+        where: { idFormateur: formateurId, idClasse: student.idClasse! },
+      }));
   }
 
   async canManageUserInEstablishment(
