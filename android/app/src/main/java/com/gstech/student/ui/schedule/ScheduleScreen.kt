@@ -4,6 +4,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -23,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.gstech.student.data.AppContainer
 import com.gstech.student.model.ClassSession
 import com.gstech.student.ui.components.ErrorState
+import com.gstech.student.ui.components.GSScreenHeader
 import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
 import com.gstech.student.util.UiState
@@ -33,16 +35,15 @@ fun ScheduleScreen(container: AppContainer, onOpenCourse: (id: String, name: Str
     val state by viewModel.state.collectAsState()
 
     Column(Modifier.fillMaxSize().background(GSBackground)) {
-        Row(
-            Modifier.fillMaxWidth().padding(20.dp, 20.dp, 20.dp, 0.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Schedule  •  ${LocalDate.now().format(DateTimeFormatter.ofPattern("MMM . yyyy"))}", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
-            Icon(Icons.Filled.Schedule, contentDescription = null, tint = GSTextPrimary)
+        Column(Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp)) {
+            GSScreenHeader(
+                title = "Planning",
+                subtitle = "Semaine du ${LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))}",
+                icon = Icons.Filled.Schedule,
+            )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(14.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -53,6 +54,7 @@ fun ScheduleScreen(container: AppContainer, onOpenCourse: (id: String, name: Str
                     modifier = Modifier
                         .clip(RoundedCornerShape(14.dp))
                         .background(if (selected) GSBluePrimary else GSSurface)
+                        .border(1.dp, if (selected) GSBluePrimary else GSDivider, RoundedCornerShape(14.dp))
                         .clickable { viewModel.selectDay(day) }
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -64,7 +66,7 @@ fun ScheduleScreen(container: AppContainer, onOpenCourse: (id: String, name: Str
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(13.dp))
         when (val s = state) {
             is UiState.Loading -> LoadingState()
             is UiState.Error -> ErrorState(s.message) { viewModel.load() }
@@ -96,6 +98,7 @@ private fun ScheduleCard(session: ClassSession, onClick: () -> Unit) {
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = GSSurface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, GSDivider),
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
     ) {
         Row(Modifier.fillMaxWidth()) {

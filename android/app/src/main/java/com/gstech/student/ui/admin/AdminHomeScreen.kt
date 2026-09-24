@@ -32,6 +32,7 @@ import com.gstech.student.data.AppContainer
 import com.gstech.student.model.AdminActivity
 import com.gstech.student.model.AdminDashboard
 import com.gstech.student.ui.components.ErrorState
+import com.gstech.student.ui.components.GSHeader
 import com.gstech.student.ui.components.GSCard
 import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
@@ -149,36 +150,11 @@ fun AdminHomeScreen(
                     // ==================================================
                     // HEADER
                     // ==================================================
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = GSBluePrimary.copy(alpha = 0.10f),
-                            modifier = Modifier.size(52.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.logo_v5),
-                                contentDescription = "GSTech",
-                                modifier = Modifier.padding(8.dp).clip(CircleShape),
-                            )
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                text = currentUserGreeting ?: "Bonjour",
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = GSTextPrimary,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = headerTitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = GSTextSecondary
-                            )
-                        }
-                    }
+                    GSHeader(
+                        roleLabel = headerTitle.uppercase(),
+                        greeting = currentUserGreeting ?: "Bonjour",
+                        avatarText = currentUserGreeting?.take(2),
+                    )
                     Spacer(Modifier.height(18.dp))
 
                     // ==================================================

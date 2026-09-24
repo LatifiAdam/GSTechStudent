@@ -1,2 +1,0 @@
-Email: bootstrap@gstech.ma
-Password: ChangeMe! 		#in .env
