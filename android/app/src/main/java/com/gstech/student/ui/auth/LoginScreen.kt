@@ -5,7 +5,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.School
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.gstech.student.R
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -44,14 +47,19 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
         ) {
             Box(
                 Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(GSBluePrimary),
+                    .size(96.dp)
+                    .clip(RoundedCornerShape(22.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.School, contentDescription = null, tint = Color.White)
+                Image(
+                    painter = painterResource(id = R.drawable.logo_v5),
+                    contentDescription = "GSTech",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
             }
             Spacer(Modifier.height(10.dp))
+
             Text("GSTech", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 26.sp)
             Text("SIS PLATFORM", color = GSTeal, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
         }
