@@ -6,9 +6,18 @@ import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
 import { Gestionnaire } from '../entities/gestionnaire.entity';
 import { Etablissement } from '../entities/etablissement.entity';
+import { stagiaire } from '../entities/stagiaire.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Document, Gestionnaire, Etablissement]), CommonModule],
+  imports: [
+    TypeOrmModule.forFeature([
+      Document,
+      Gestionnaire,
+      Etablissement,
+      stagiaire,
+    ]),
+    CommonModule,
+  ],
   controllers: [DocumentsController],
   providers: [DocumentsService],
   exports: [DocumentsService],
