@@ -28,6 +28,7 @@ data class AdminDashboard(
     val totalStudents: Int = 0,
     val totalTeachers: Int = 0,
     val totalGestionnaires: Int = 0,
+    val totalEfp: Int = 0,
 )
 
 data class AdminActivity(

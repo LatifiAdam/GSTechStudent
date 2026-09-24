@@ -7,6 +7,7 @@ data class Student(
     val email: String,
     val studentNumber: String?,
     val promotion: String?,
+    val groupName: String?,
     val cin: String?,
     val telephone: String?,
     val adresse: String?,

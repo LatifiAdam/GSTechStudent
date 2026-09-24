@@ -163,7 +163,7 @@ fun ProfileScreen(
                                 )
 
                                 Text(
-                                    "Dept. of Computer Science",
+                                    "Groupe : ${s.data.student.groupName ?: "—"}",
                                     color = GSBluePrimary,
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Medium

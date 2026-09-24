@@ -32,7 +32,7 @@ class TeacherHomeViewModel(private val container: AppContainer) : ViewModel() {
             _state.value = safeCall {
                 val userId = container.tokenManager.userIdNow() ?: error("No signed-in user.")
                 val userDto = container.profileRepository.rawUser(userId)
-                val courses = container.teacherRepository.getMyCourses()
+                val courses = container.teacherRepository.getTodaysCourses()
                 val pending = container.teacherRepository.getJustifications(JustificationStatus.PENDING).size
                 TeacherHomeData(
                     name = "${userDto.prenom} ${userDto.nom}",

@@ -40,12 +40,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.gstech.student.data.AppContainer
 import com.gstech.student.data.remote.dto.DocumentDto
 import com.gstech.student.data.remote.dto.DocumentRequestDto
 import com.gstech.student.data.remote.dto.RefuseJustificationRequest
 import com.gstech.student.ui.theme.GSBackground
 import com.gstech.student.ui.theme.GSBluePrimary
+import com.gstech.student.ui.theme.GSSurface
+import com.gstech.student.ui.components.StatusPill
 import com.gstech.student.ui.theme.GSTextPrimary
 import com.gstech.student.ui.theme.GSTextSecondary
 import kotlinx.coroutines.launch
@@ -288,29 +291,39 @@ fun GestionnaireDocumentsScreen(
                 }
             }
 
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
+            Spacer(Modifier.height(12.dp))
 
             Text(
-                text = "Mes documents",
+                text = "Mes documents en attente",
                 style = MaterialTheme.typography.titleLarge,
                 color = GSTextPrimary
             )
+            Spacer(Modifier.height(8.dp))
 
-            Spacer(
-                modifier = Modifier.height(8.dp)
-            )
-
-            docs.take(4).forEach { document ->
-
-                Text(
-                    text = "${document.nomDocument} • ${document.statut}",
-                    color = GSTextSecondary,
-                    modifier = Modifier.padding(
-                        vertical = 3.dp
-                    )
-                )
+            val pendingDocuments = docs.filter { it.statut.equals("en_attente", true) }
+            if (pendingDocuments.isEmpty()) {
+                Card(colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = GSSurface)) {
+                    Text("Aucun document en attente de validation.", color = GSTextSecondary, modifier = Modifier.padding(14.dp))
+                }
+            } else {
+                pendingDocuments.take(6).forEach { document ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = GSSurface),
+                    ) {
+                        androidx.compose.foundation.layout.Row(
+                            Modifier.fillMaxWidth().padding(14.dp),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(document.nomDocument, color = GSTextPrimary, style = MaterialTheme.typography.titleMedium)
+                                Text("Envoyé au Directeur pour validation", color = GSTextSecondary, fontSize = 12.sp)
+                            }
+                            StatusPill("En attente", GSBluePrimary)
+                        }
+                    }
+                }
             }
 
             message?.let { text ->

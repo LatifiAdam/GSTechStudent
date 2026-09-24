@@ -17,6 +17,7 @@ const DOCUMENT_TITLES: Record<TypeDocument, string> = {
   [TypeDocument.RELEVE_NOTES]: 'Relevé de notes',
   [TypeDocument.ATTESTATION_REUSSITE]: 'Attestation de réussite',
   [TypeDocument.BULLETIN]: 'Bulletin',
+  [TypeDocument.ATTESTATION_INSCRIPTION]: 'Attestation de poursuite de formation',
 };
 
 @Injectable()
@@ -66,19 +67,40 @@ export class DocumentRequestsService {
 
   async generateForGestionnaire(id: string, gestionnaireId: string) {
     const demande = await this.ensureGestionnaireRequest(id, gestionnaireId);
-    const student = await this.stagiaireRepo.findOne({ where: { idUtilisateur: demande.idstagiaire }, relations: ['utilisateur'] });
+    const student = await this.stagiaireRepo.findOne({
+      where: { idUtilisateur: demande.idstagiaire },
+      relations: ['utilisateur', 'etablissement', 'classe'],
+    });
     if (!student) throw new NotFoundException('Étudiant introuvable');
-    let title = demande.typeDocument ? DOCUMENT_TITLES[demande.typeDocument] : demande.document?.nomDocument ?? 'Document administratif';
+    const title = demande.typeDocument ? DOCUMENT_TITLES[demande.typeDocument] : demande.document?.nomDocument ?? 'Document administratif';
     const user = student.utilisateur;
-    const buffer = await this.pdf.generateDocument(title, [
-      `Nom : ${user?.nom ?? ''} ${user?.prenom ?? ''}`,
-      `Numéro étudiant : ${student.numerostagiaire}`,
-      `Promotion : ${student.promotion}`,
-      `Établissement : ${demande.idEtablissement ?? ''}`,
-      '',
-      `Document demandé : ${title}`,
-      `Ce document est généré pour l'étudiant identifié ci-dessus.`,
-    ]);
+    let buffer: Buffer;
+    if (demande.typeDocument === TypeDocument.ATTESTATION_INSCRIPTION) {
+      const region = user?.region ?? '';
+      buffer = await this.pdf.generateAttestationInscription({
+        nomComplet: `${user?.nom ?? ''} ${user?.prenom ?? ''}`.trim(),
+        dateNaissance: 'Non renseignée',
+        lieuNaissance: region || '—',
+        niveau: 'Technicien spécialisé',
+        specialite: student.classe?.nomClasse || 'Infrastructure Digitale',
+        annee: student.promotion || '2025/2026',
+        numeroInscription: student.numerostagiaire || '—',
+        etablissement: student.etablissement?.nomEtablissement || 'Établissement non renseigné',
+        poursuiteDepuis: '—',
+        ville: 'Rabat',
+        dateEdition: new Date().toLocaleDateString('fr-FR'),
+      });
+    } else {
+      buffer = await this.pdf.generateDocument(title, [
+        `Nom : ${user?.nom ?? ''} ${user?.prenom ?? ''}`,
+        `Numéro étudiant : ${student.numerostagiaire ?? '—'}`,
+        `Promotion : ${student.promotion ?? '—'}`,
+        `Établissement : ${student.etablissement?.nomEtablissement ?? '—'}`,
+        '',
+        `Document demandé : ${title}`,
+        `Ce document est généré pour l'étudiant identifié ci-dessus.`,
+      ]);
+    }
     const filePath = await this.storage.save('generated-documents', `${demande.idDemande}-${uuid()}.pdf`, buffer, 'application/pdf');
     demande.statut = StatutDemande.DELIVREE; demande.dateTraitement = new Date(); demande.fichierGenere = filePath;
     const saved = await this.demandeRepo.save(demande);

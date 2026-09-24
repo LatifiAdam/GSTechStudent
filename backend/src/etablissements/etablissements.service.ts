@@ -102,16 +102,70 @@ export class EtablissementsService {
       throw error;
     }
   }
-  async get(id: string) { const e=await this.repo.findOne({where:{idEtablissement:id},relations:['directeur','directeur.utilisateur','gestionnaires','gestionnaires.utilisateur']}); if(!e) throw new NotFoundException('Établissement introuvable'); return e; }
+  async get(id: string) {
+    const e = await this.repo.findOne({
+      where: { idEtablissement: id },
+      relations: ['directeur', 'directeur.utilisateur', 'gestionnaires', 'gestionnaires.utilisateur'],
+    });
+    if (!e) throw new NotFoundException('Établissement introuvable');
+    return e;
+  }
+
+  async update(idEtablissement: string, nomEtablissement: string) {
+    const name = nomEtablissement?.trim();
+    if (!name) throw new BadRequestException('Le nom de l’établissement est obligatoire');
+    const etab = await this.get(idEtablissement);
+    const duplicate = await this.repo.findOne({
+      where: { nomEtablissement: name, region: etab.region ?? undefined },
+    });
+    if (duplicate && duplicate.idEtablissement !== idEtablissement) {
+      throw new BadRequestException(`Un établissement nommé « ${name} » existe déjà dans cette région`);
+    }
+    etab.nomEtablissement = name;
+    return this.repo.save(etab);
+  }
+
+  async remove(idEtablissement: string) {
+    const etab = await this.get(idEtablissement);
+    await this.repo.remove(etab);
+    return { deleted: true, idEtablissement };
+  }
 
   async assignDirector(idEtablissement:string,idUtilisateur:string,actorId?:string,actorRole?:Role){
-    const etab=await this.get(idEtablissement);
-    if (actorRole===Role.SCQ) { const actor=await this.userRepo.findOne({where:{idUtilisateur:actorId}}); if(!actor || !this.sameRegion(actor.region, etab.region)) throw new ForbiddenException('Cet établissement est hors de votre région'); }
-    const user=await this.userRepo.findOne({where:{idUtilisateur}});
-    if(!user || user.role!==Role.DIRECTEUR) throw new BadRequestException('Utilisateur invalide : un Directeur est requis');
-    const director=await this.directeurRepo.findOne({where:{idUtilisateur}}); if(!director) throw new BadRequestException('Compte Directeur incomplet');
-    const existing=await this.repo.findOne({where:{idDirecteur:idUtilisateur}}); if(existing && existing.idEtablissement!==idEtablissement) throw new BadRequestException('Ce Directeur est déjà affecté à un établissement');
-    etab.idDirecteur=idUtilisateur; return this.repo.save(etab);
+    const etab = await this.get(idEtablissement);
+    if (actorRole === Role.SCQ) {
+      const actor = await this.userRepo.findOne({ where: { idUtilisateur: actorId } });
+      if (!actor || !this.sameRegion(actor.region, etab.region)) {
+        throw new ForbiddenException('Cet établissement est hors de votre région');
+      }
+    }
+    const user = await this.userRepo.findOne({ where: { idUtilisateur } });
+    if (!user || user.role !== Role.DIRECTEUR) {
+      throw new BadRequestException('Utilisateur invalide : un Directeur est requis');
+    }
+    if (actorRole === Role.SCQ && !this.sameRegion(user.region, etab.region)) {
+      throw new BadRequestException('Ce Directeur n’appartient pas à la région de cet établissement');
+    }
+    const director = await this.directeurRepo.findOne({ where: { idUtilisateur } });
+    if (!director) throw new BadRequestException('Compte Directeur incomplet');
+    const existing = await this.repo.findOne({ where: { idDirecteur: idUtilisateur } });
+    if (existing && existing.idEtablissement !== idEtablissement) {
+      throw new BadRequestException('Ce Directeur est déjà affecté à un établissement');
+    }
+
+    // Update only the FK. This avoids re-validating unrelated établissement fields.
+    await this.repo.update({ idEtablissement }, { idDirecteur: idUtilisateur });
+    return this.get(idEtablissement).then(e => this.map(e));
+  }
+
+  async removeDirector(idEtablissement:string,actorId?:string,actorRole?:Role){
+    const etab = await this.get(idEtablissement);
+    if (actorRole === Role.SCQ) {
+      const actor = await this.userRepo.findOne({ where: { idUtilisateur: actorId } });
+      if (!actor || !this.sameRegion(actor.region, etab.region)) throw new ForbiddenException('Cet établissement est hors de votre région');
+    }
+    await this.repo.update({ idEtablissement }, { idDirecteur: null });
+    return this.get(idEtablissement).then(e => this.map(e));
   }
 
   async addGestionnaire(idEtablissement:string,idGestionnaire:string,actorId:string,actorRole:Role){

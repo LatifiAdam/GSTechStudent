@@ -38,7 +38,7 @@ private val schedulerTimes = listOf("08:00", "10:30", "13:00", "15:30")
 private val schedulerEnds = listOf("10:30", "13:00", "15:30", "18:00")
 
 @Composable
-fun AdminSchedulerScreen(container: AppContainer) {
+fun AdminSchedulerScreen(container: AppContainer, onOpenClasses: (() -> Unit)? = null) {
     val repository = container.adminManagementRepository
     val scope = rememberCoroutineScope()
 
@@ -151,25 +151,34 @@ fun AdminSchedulerScreen(container: AppContainer) {
                 )
             }
             Spacer(Modifier.width(12.dp))
-            Box {
+            if (onOpenClasses != null) {
                 OutlinedButton(
-                    onClick = { classMenuExpanded = true },
+                    onClick = onOpenClasses,
                     shape = RoundedCornerShape(28.dp),
                 ) {
                     Text("Classes", color = GSTeal)
                 }
-                DropdownMenu(
-                    expanded = classMenuExpanded,
-                    onDismissRequest = { classMenuExpanded = false },
-                ) {
-                    classes.forEach { clazz ->
-                        DropdownMenuItem(
-                            text = { Text(clazz.nomClasse) },
-                            onClick = {
-                                selectedClass = clazz
-                                classMenuExpanded = false
-                            },
-                        )
+            } else {
+                Box {
+                    OutlinedButton(
+                        onClick = { classMenuExpanded = true },
+                        shape = RoundedCornerShape(28.dp),
+                    ) {
+                        Text("Classes", color = GSTeal)
+                    }
+                    DropdownMenu(
+                        expanded = classMenuExpanded,
+                        onDismissRequest = { classMenuExpanded = false },
+                    ) {
+                        classes.forEach { clazz ->
+                            DropdownMenuItem(
+                                text = { Text(clazz.nomClasse) },
+                                onClick = {
+                                    selectedClass = clazz
+                                    classMenuExpanded = false
+                                },
+                            )
+                        }
                     }
                 }
             }

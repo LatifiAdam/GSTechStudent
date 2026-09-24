@@ -351,6 +351,7 @@ private fun UserRow(
                     .size(44.dp)
                     .clip(CircleShape)
                     .background(GSDivider)
+                    .clickable(onClick = onClick)
             )
 
             Spacer(Modifier.width(12.dp))

@@ -15,6 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.gstech.student.R
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,8 +66,8 @@ private fun TeacherHomeContent(
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(GSBluePrimary), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.School, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(20.dp))
+                Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(GSSurface), contentAlignment = Alignment.Center) {
+                    androidx.compose.foundation.Image(painterResource(R.drawable.logo_v5), contentDescription = "GSTech", modifier = Modifier.fillMaxSize().padding(3.dp))
                 }
                 Spacer(Modifier.width(8.dp))
                 Column {
@@ -148,9 +150,9 @@ private fun LectureRow(course: TeacherCourse) {
             Text(course.schedule.ifBlank { "—" }, color = GSBluePrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
         }
         Spacer(Modifier.width(12.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(course.name, fontWeight = FontWeight.SemiBold, color = GSTextPrimary)
-            Text("${course.code} • ${course.room}", color = GSTextSecondary, fontSize = 12.sp)
+            Text("${course.groupName ?: "Groupe —"} • ${course.code} • ${course.room}", color = GSTextSecondary, fontSize = 12.sp)
         }
     }
 }

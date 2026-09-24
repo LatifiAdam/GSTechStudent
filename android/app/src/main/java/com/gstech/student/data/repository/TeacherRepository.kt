@@ -7,7 +7,9 @@ import com.gstech.student.data.remote.CoursesApi
 import com.gstech.student.data.remote.JustificationsApi
 import com.gstech.student.data.remote.dto.*
 import com.gstech.student.model.*
+import java.time.DayOfWeek
 import java.time.OffsetDateTime
+import java.time.LocalDate
 
 class TeacherRepository(
     private val coursesApi: CoursesApi,
@@ -21,6 +23,30 @@ class TeacherRepository(
     suspend fun getMyCourses(): List<TeacherCourse> {
         val id = teacherId()
         return coursesApi.getAll(formateurId = id).map { it.toTeacherCourse() }
+    }
+
+    suspend fun getTodaysCourses(): List<TeacherCourse> {
+        val id = teacherId()
+        val today = LocalDate.now().dayOfWeek
+        return coursesApi.getAll(formateurId = id)
+            .flatMap { course ->
+                course.affectations.orEmpty().flatMap { affectation ->
+                    affectation.creneaux.orEmpty()
+                        .filter { dayMatches(it.jourSemaine, today) }
+                        .map { slot ->
+                            TeacherCourse(
+                                id = course.idCours,
+                                name = course.nomCours,
+                                code = course.nomCours.filter { ch -> ch.isLetterOrDigit() }.take(6).uppercase(),
+                                room = slot.salle ?: course.salle ?: "—",
+                                schedule = "${formatLectureTime(slot.heureDebut)} - ${formatLectureTime(slot.heureFin)}",
+                                groupName = affectation.nomClasse ?: affectation.classe?.nomClasse,
+                            )
+                        }
+                }
+            }
+            .distinctBy { "${it.id}|${it.groupName}|${it.schedule}|${it.room}" }
+            .sortedBy { it.schedule }
     }
 
     suspend fun openAttendanceCall(creneauId: String): AttendanceCall {
@@ -82,7 +108,9 @@ class TeacherRepository(
         name = nomCours,
         code = nomCours.filter { it.isLetterOrDigit() }.take(6).uppercase(),
         room = salle ?: "—",
-        schedule = horaire?.take(16)?.replace('T', ' ') ?: "",
+        schedule = formatLectureTime(horaire),
+        groupName = affectations?.firstOrNull()?.nomClasse
+            ?: affectations?.firstOrNull()?.classe?.nomClasse,
     )
 
     private fun PresenceWithStudentDto.toRosterStudent() = RosterStudent(
@@ -117,4 +145,30 @@ class TeacherRepository(
         dateIso = dateEnvoi,
         courseName = presence?.appel?.cours?.nomCours,
     )
+}
+
+private fun dayMatches(value: String?, day: DayOfWeek): Boolean {
+    if (value.isNullOrBlank()) return false
+    val normalized = value.trim().lowercase()
+    val expected = when (day) {
+        DayOfWeek.MONDAY -> setOf("1", "lundi", "monday")
+        DayOfWeek.TUESDAY -> setOf("2", "mardi", "tuesday")
+        DayOfWeek.WEDNESDAY -> setOf("3", "mercredi", "wednesday")
+        DayOfWeek.THURSDAY -> setOf("4", "jeudi", "thursday")
+        DayOfWeek.FRIDAY -> setOf("5", "vendredi", "friday")
+        DayOfWeek.SATURDAY -> setOf("6", "samedi", "saturday")
+        DayOfWeek.SUNDAY -> setOf("7", "dimanche", "sunday")
+    }
+    return normalized in expected
+}
+
+private fun formatLectureTime(value: String?): String {
+    if (value.isNullOrBlank()) return "—"
+    val raw = value.trim().replace('T', ' ')
+    val match = Regex("(\\d{1,2}):(\\d{2})(?:[:.]\\d{2})?").find(raw)
+    return if (match != null) {
+        val h = match.groupValues[1].toIntOrNull() ?: return raw
+        val m = match.groupValues[2]
+        "%02d:%s".format(h, m)
+    } else raw.take(16)
 }

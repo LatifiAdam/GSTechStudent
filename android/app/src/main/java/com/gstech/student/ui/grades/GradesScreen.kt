@@ -9,61 +9,49 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.gstech.student.data.AppContainer
+import com.gstech.student.data.remote.dto.StudentGradeDto
+import com.gstech.student.ui.components.ErrorState
 import com.gstech.student.ui.components.GSCard
+import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
 
 @Composable
 fun GradesScreen(container: AppContainer) {
-    val local = container.localAcademicRepository
-    var course by remember { mutableStateOf<String?>(null) }
+    var grades by remember { mutableStateOf<List<StudentGradeDto>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var reloadKey by remember { mutableIntStateOf(0) }
 
-    val studentId by produceState<String?>(initialValue = null) {
-        value = container.tokenManager.userIdNow()
+    LaunchedEffect(reloadKey) {
+        runCatching { container.gradingRepository.getMyGrades() }
+            .onSuccess { grades = it }
+            .onFailure { error = it.message ?: "Impossible de charger les notes." }
     }
 
-    val grades = remember(studentId) {
-        studentId?.let { local.grades(studentId = it) } ?: emptyList()
-    }
-
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(GSBackground)
-            .padding(20.dp)
-    ) {
-        Text(
-            "Grades",
-            style = MaterialTheme.typography.headlineMedium,
-            color = GSTextPrimary
-        )
-        Spacer(Modifier.height(10.dp))
-
-        val courses = grades.map { it.courseId }.distinct()
-        var expanded by remember { mutableStateOf(false) }
-        Box {
-            OutlinedButton(onClick = { expanded = true }) {
-                Text(course ?: "All courses")
+    Column(Modifier.fillMaxSize().background(GSBackground).padding(20.dp)) {
+        Text("Grades", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
+        Spacer(Modifier.height(8.dp))
+        Text("Moyenne = (somme des notes) / nombre de notes", color = GSTextSecondary)
+        Spacer(Modifier.height(12.dp))
+        when {
+            error != null -> ErrorState(error!!) {
+                error = null
+                grades = null
+                reloadKey++
             }
-            DropdownMenu(expanded, { expanded = false }) {
-                DropdownMenuItem({ Text("All courses") }, { course = null; expanded = false })
-                courses.forEach { c ->
-                    DropdownMenuItem({ Text(c) }, { course = c; expanded = false })
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(grades.filter { course == null || it.courseId == course }) { g ->
-                GSCard {
-                    Text(
-                        "Course: ${g.courseId}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = GSTextPrimary
-                    )
-                    Text("Grade 1: ${g.values.getOrNull(0) ?: 0}", color = GSTextSecondary)
-                    Text("Grade 2: ${g.values.getOrNull(1) ?: 0}", color = GSTextSecondary)
-                    Text("Grade 3: ${g.values.getOrNull(2) ?: 0}", color = GSTextSecondary)
+            grades == null -> LoadingState()
+            grades!!.isEmpty() -> Text("Aucune note enregistrée.", color = GSTextSecondary)
+            else -> LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(grades!!, key = { it.idNote }) { g ->
+                    val notes = listOfNotNull(g.note1, g.note2, g.note3)
+                    val grade = notes.takeIf { it.isNotEmpty() }?.average()
+                    GSCard {
+                        Text(g.nomCours ?: g.idCours ?: "Cours", style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
+                        Text("Groupe : ${g.nomClasse ?: "—"}", color = GSTextSecondary)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Notes : ${if (notes.isEmpty()) "—" else notes.joinToString(" • ") { String.format("%.2f", it) }}", color = GSTextSecondary)
+                        Spacer(Modifier.height(4.dp))
+                        Text(if (grade == null) "Note finale : —" else "Note finale : ${String.format("%.2f", grade)}", style = MaterialTheme.typography.titleSmall, color = GSBluePrimary)
+                    }
                 }
             }
         }

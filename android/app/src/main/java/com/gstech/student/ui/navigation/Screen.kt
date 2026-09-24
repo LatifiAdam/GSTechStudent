@@ -37,6 +37,7 @@ sealed class Screen(val route: String) {
             Attendance.route,
             Schedule.route,
             Grades.route,
+            Documents.route,
             Announcements.route,
             Profile.route
         )

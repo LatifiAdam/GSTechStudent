@@ -27,7 +27,7 @@ export class DocumentsController {
 
   @Roles(Role.stagiaire)
   @Get('approved')
-  approved() { return this.service.approved(); }
+  approved(@Req() req: any) { return this.service.approvedForStudent(req.user.userId); }
 
   @Roles(Role.GESTIONNAIRE)
   @Post('upload')

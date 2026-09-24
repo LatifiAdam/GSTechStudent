@@ -28,7 +28,7 @@ fun AdminRoot(container: AppContainer, onSignedOut: () -> Unit) {
         NavHost(navController, AdminScreen.Home.route, modifier = if(showBar) Modifier.padding(padding) else Modifier) {
             composable(AdminScreen.Home.route) { AdminHomeScreen(container, onOpenSettings = { navController.navigate(AdminScreen.Profile.route) }, headerTitle = "GSTech DF") }
             composable(AdminScreen.Users.route) { UsersListScreen(container, onOpenUser={id->navController.navigate(AdminScreen.UserDetail.createRoute(id))}, onAddUser={navController.navigate(AdminScreen.NewUser.route)}) }
-            composable(AdminScreen.Establishments.route) { AdminEstablishmentsScreen(container) }
+            composable(AdminScreen.Establishments.route) { AdminEstablishmentsScreen(container) { id -> navController.navigate(AdminScreen.UserDetail.createRoute(id)) } }
             composable(AdminScreen.NewUser.route) { AddUserScreen(container, { navController.popBackStack() }, setOf("srio", "scq")) }
             composable(AdminScreen.UserDetail.route, arguments=listOf(navArgument("userId"){type=NavType.StringType})) { e -> UserDetailScreen(container, e.arguments?.getString("userId").orEmpty()){navController.popBackStack()} }
             composable(AdminScreen.Profile.route) { SettingsScreen(onBack={navController.popBackStack()}, onEditProfile={navController.navigate("admin/edit-profile")}, onLanguage={navController.navigate("admin/language")}, onSignOut={scope.launch{container.authRepository.logout();onSignedOut()}}) }

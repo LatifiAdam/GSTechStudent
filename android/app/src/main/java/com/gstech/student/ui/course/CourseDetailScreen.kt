@@ -82,9 +82,8 @@ fun CourseDetailScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "Grading isn't part of GSTech's current backend (the cahier des charges scopes " +
-                            "academic grades out of this release) — this section will populate once a grades " +
-                            "endpoint is added.",
+                        "Les notes détaillées sont disponibles dans l'onglet Notes. La note finale est calculée par : " +
+                            "(somme des notes) / nombre de notes.",
                         color = GSTextSecondary,
                         fontSize = 12.sp,
                     )

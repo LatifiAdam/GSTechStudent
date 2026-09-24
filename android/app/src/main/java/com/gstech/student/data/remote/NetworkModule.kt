@@ -36,6 +36,7 @@ class NetworkModule(private val tokenManager: TokenManager) {
     val affectationsApi: AffectationsApi by lazy { authenticatedRetrofit.create(AffectationsApi::class.java) }
     val coursesApi: CoursesApi by lazy { authenticatedRetrofit.create(CoursesApi::class.java) }
     val scheduleApi: ScheduleApi by lazy { authenticatedRetrofit.create(ScheduleApi::class.java) }
+    val gradingApi: GradingApi by lazy { authenticatedRetrofit.create(GradingApi::class.java) }
     val attendanceApi: AttendanceApi by lazy { authenticatedRetrofit.create(AttendanceApi::class.java) }
     val notificationsApi: NotificationsApi by lazy { authenticatedRetrofit.create(NotificationsApi::class.java) }
     val reportsApi: ReportsApi by lazy { authenticatedRetrofit.create(ReportsApi::class.java) }

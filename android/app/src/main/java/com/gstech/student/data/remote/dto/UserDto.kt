@@ -5,6 +5,12 @@ import com.squareup.moshi.JsonClass
 
 // GET /users/:id — Phase 2 section 4.3.
 @JsonClass(generateAdapter = true)
+data class ClassBriefDto(
+    @Json(name = "idClasse") val idClasse: String,
+    @Json(name = "nomClasse") val nomClasse: String,
+)
+
+@JsonClass(generateAdapter = true)
 data class UserDto(
     @Json(name = "idUtilisateur")
     val idUtilisateur: String,
@@ -23,6 +29,9 @@ data class UserDto(
 
     @Json(name = "idClasse")
     val idClasse: String? = null,
+
+    @Json(name = "classe")
+    val classe: ClassBriefDto? = null,
 
     @Json(name = "dateCreation")
     val dateCreation: String? = null,

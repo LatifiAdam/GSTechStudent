@@ -896,7 +896,8 @@ CREATE TABLE demande_document (
         'certificat_scolarite',
         'releve_notes',
         'attestation_reussite',
-        'bulletin'
+        'bulletin',
+        'attestation_inscription'
     ) NULL,
 
     id_document CHAR(36) NULL,

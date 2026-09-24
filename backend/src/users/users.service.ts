@@ -1033,8 +1033,11 @@ export class UsersService {
       const actor = await this.utilisateurRepo.findOne({
         where: { idUtilisateur: actorId },
       });
-      if (actor?.region && user.region !== actor.region)
+      if (!actor?.region || !this.regionsMatch(actor.region, user.region))
         throw new BadRequestException('Utilisateur hors de votre région');
+      const expectedRole = requesterRole === Role.SRIO ? Role.GESTIONNAIRE : Role.DIRECTEUR;
+      if (user.role !== expectedRole)
+        throw new BadRequestException('Suppression non autorisée pour ce rôle');
     }
     if (
       actorId &&

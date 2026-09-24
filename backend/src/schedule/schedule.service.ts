@@ -54,7 +54,8 @@ export class ScheduleService {
       .innerJoinAndSelect(
         'affectation.formateur',
         'formateur',
-      );
+      )
+      .leftJoinAndSelect('formateur.utilisateur', 'formateurUtilisateur');
 
     // ----------------------------------------------------------
     // Course

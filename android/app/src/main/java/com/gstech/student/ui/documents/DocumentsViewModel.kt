@@ -10,7 +10,7 @@ import com.gstech.student.util.safeCall
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-val documentTypes = listOf("bulletin" to "Bulletin", "certificat_scolarite" to "Certificate of Enrollment", "releve_notes" to "Transcript of Records", "attestation_reussite" to "Certificate of Completion")
+val documentTypes = listOf("attestation_inscription" to "Attestation d'inscription OFPPT")
 
 class DocumentsViewModel(private val container: AppContainer) : ViewModel() {
     private val _state = MutableStateFlow<UiState<List<DocumentRequest>>>(UiState.Loading)

@@ -16,3 +16,6 @@ data class EstablishmentDto(
 data class AssignEstablishmentUserRequest(@Json(name = "idUtilisateur") val idUtilisateur: String)
 @JsonClass(generateAdapter = true)
 data class CreateEstablishmentRequest(@Json(name = "nomEtablissement") val nomEtablissement: String, @Json(name = "region") val region: String)
+
+@JsonClass(generateAdapter = true)
+data class UpdateEstablishmentRequest(@Json(name = "nomEtablissement") val nomEtablissement: String)

@@ -64,6 +64,7 @@ class ProfileRepository(
         email = email,
         studentNumber = numeroEtudiant,
         promotion = promotion,
+        groupName = classe?.nomClasse,
         cin = cin,
         telephone = telephone,
         adresse = adresse

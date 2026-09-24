@@ -72,6 +72,9 @@ data class AffectationDto(
     @Json(name = "classe")
     val classe: ClassDto? = null,
 
+    @Json(name = "nomClasse")
+    val nomClasse: String? = null,
+
     @Json(name = "cours")
     val cours: CourseDto? = null,
 

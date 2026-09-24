@@ -35,7 +35,9 @@ class ScheduleRepository(
             ?.utilisateur
             ?.let { "${it.prenom} ${it.nom}".trim() },
         dayOfWeek = jourSemaine,
-        startTime = heureDebut,
-        endTime = heureFin,
+        startTime = formatTime(heureDebut),
+        endTime = formatTime(heureFin),
     )
+
+    private fun formatTime(value: String): String = value.trim().split(":").take(2).joinToString(":")
 }

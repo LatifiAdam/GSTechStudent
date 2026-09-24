@@ -59,6 +59,14 @@ export class UsersController {
     } else if ([Role.GESTIONNAIRE, Role.DIRECTEUR].includes(req.user.role as Role) && req.user.userId !== id) {
       const allowed = await this.service.canManageUserInEstablishment(req.user.userId, id, req.user.role);
       if (!allowed) throw new ForbiddenException('Utilisateur hors de votre établissement ou de votre périmètre');
+    } else if ([Role.SRIO, Role.SCQ].includes(req.user.role as Role) && req.user.userId !== id) {
+      const [actor, target] = await Promise.all([this.service.findOne(req.user.userId), this.service.findOne(id)]);
+      const targetRole = target?.role as Role;
+      if (!actor?.region || !target?.region || !this.service.regionsMatch(actor.region, target.region)) {
+        throw new ForbiddenException('Utilisateur hors de votre région');
+      }
+      const expected = req.user.role === Role.SRIO ? Role.GESTIONNAIRE : Role.DIRECTEUR;
+      if (targetRole !== expected) throw new ForbiddenException('Utilisateur hors de votre périmètre');
     } else if (req.user.role !== Role.SUPER_ADMIN && req.user.role !== Role.DF && req.user.role !== Role.DIRECTEUR && req.user.role !== Role.GESTIONNAIRE && req.user.role !== Role.FORMATEUR && req.user.userId !== id) {
       throw new ForbiddenException('Vous ne pouvez consulter que votre propre profil');
     }
@@ -89,7 +97,12 @@ export class UsersController {
     if ([Role.DIRECTEUR, Role.GESTIONNAIRE].includes(req.user.role as Role) && req.user.userId !== id) {
       const allowed = await this.service.canManageUserInEstablishment(req.user.userId, id, req.user.role);
       if (!allowed) throw new ForbiddenException('Modification non autorisée hors de votre établissement');
-    } else if (req.user.role !== Role.SUPER_ADMIN && req.user.role !== Role.DF && req.user.role !== Role.DIRECTEUR && req.user.role !== Role.GESTIONNAIRE && req.user.userId !== id) {
+    } else if ([Role.SRIO, Role.SCQ].includes(req.user.role as Role) && req.user.userId !== id) {
+      const [actor, target] = await Promise.all([this.service.findOne(req.user.userId), this.service.findOne(id)]);
+      if (!actor?.region || !target?.region || !this.service.regionsMatch(actor.region, target.region)) throw new ForbiddenException('Modification non autorisée hors de votre région');
+      const expected = req.user.role === Role.SRIO ? Role.GESTIONNAIRE : Role.DIRECTEUR;
+      if (target.role !== expected) throw new ForbiddenException('Modification non autorisée pour ce rôle');
+    } else if (req.user.role !== Role.SUPER_ADMIN && req.user.role !== Role.DF && req.user.role !== Role.DIRECTEUR && req.user.role !== Role.GESTIONNAIRE && req.user.role !== Role.SRIO && req.user.role !== Role.SCQ && req.user.userId !== id) {
       throw new ForbiddenException('Vous ne pouvez modifier que votre propre profil');
     }
     return this.service.update(id, dto);

@@ -5,6 +5,7 @@ import { Document, DocumentStatus } from '../entities/document.entity';
 import { FileStorageService } from '../common/services/file-storage.service';
 import { Gestionnaire } from '../entities/gestionnaire.entity';
 import { Etablissement } from '../entities/etablissement.entity';
+import { stagiaire } from '../entities/stagiaire.entity';
 
 @Injectable()
 export class DocumentsService {
@@ -13,6 +14,7 @@ export class DocumentsService {
     private readonly storage: FileStorageService,
     @InjectRepository(Gestionnaire) private readonly gestionnaireRepo: Repository<Gestionnaire>,
     @InjectRepository(Etablissement) private readonly etablissementRepo: Repository<Etablissement>,
+    @InjectRepository(stagiaire) private readonly stagiaireRepo: Repository<stagiaire>,
   ) {}
 
   list(status?: DocumentStatus) {
@@ -31,8 +33,22 @@ export class DocumentsService {
     return this.repo.find({ where: { idGestionnaire }, order: { dateCreation: 'DESC' } });
   }
 
-  approved() {
-    return this.repo.find({ where: { statut: DocumentStatus.APPROVED }, order: { nomDocument: 'ASC' } });
+  async approvedForStudent(studentId: string) {
+    const student = await this.stagiaireRepo.findOne({ where: { idUtilisateur: studentId } });
+    if (!student?.idEtablissement) return [];
+
+    const gestionnaires = await this.gestionnaireRepo.find({
+      where: { idEtablissement: student.idEtablissement },
+    });
+    const ids = gestionnaires.map((g) => g.idUtilisateur);
+    if (!ids.length) return [];
+
+    return this.repo
+      .createQueryBuilder('d')
+      .where('d.statut = :status', { status: DocumentStatus.APPROVED })
+      .andWhere('d.id_gestionnaire IN (:...gestionnaires)', { gestionnaires: ids })
+      .orderBy('d.nom_document', 'ASC')
+      .getMany();
   }
 
   async upload(file: Express.Multer.File, nomDocument: string, idGestionnaire: string) {

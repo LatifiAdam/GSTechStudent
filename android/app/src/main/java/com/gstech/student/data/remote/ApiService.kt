@@ -155,8 +155,11 @@ interface AnnouncementsApi {
 
 interface EstablishmentsApi {
  @GET("etablissements") suspend fun getAll(): List<EstablishmentDto>
+ @PATCH("etablissements/{id}") suspend fun update(@Path("id") id:String,@Body body:UpdateEstablishmentRequest): EstablishmentDto
+ @DELETE("etablissements/{id}") suspend fun delete(@Path("id") id:String): retrofit2.Response<Unit>
  @POST("etablissements") suspend fun create(@Body body: CreateEstablishmentRequest): EstablishmentDto
  @POST("etablissements/{id}/directeur") suspend fun assignDirector(@Path("id") id:String,@Body body:AssignEstablishmentUserRequest): EstablishmentDto
+ @DELETE("etablissements/{id}/directeur") suspend fun removeDirector(@Path("id") id:String): EstablishmentDto
  @POST("etablissements/{id}/gestionnaires") suspend fun addGestionnaire(@Path("id") id:String,@Body body:AssignEstablishmentUserRequest): Any
  @DELETE("etablissements/{id}/gestionnaires/{gestionnaireId}") suspend fun removeGestionnaire(@Path("id") id:String,@Path("gestionnaireId") gid:String): Response<Unit>
  @GET("etablissements/mine") suspend fun mine(): EstablishmentDto?

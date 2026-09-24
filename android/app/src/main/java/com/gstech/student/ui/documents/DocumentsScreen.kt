@@ -1,6 +1,7 @@
 package com.gstech.student.ui.documents
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -73,10 +74,10 @@ fun DocumentsScreen(container: AppContainer, onBack: () -> Unit) {
                                 if (req.status == "delivree") scope.launch {
                                     runCatching {
                                         val body = container.documentsRepository.getRequestFile(req.id)
-                                        val f = File(container.context.cacheDir, "${req.id}.pdf")
+                                        val f = File(container.context.cacheDir, "document-${req.id}.pdf")
                                         body.byteStream().use { input -> f.outputStream().use { input.copyTo(it) } }
                                         val uri = FileProvider.getUriForFile(container.context, "${container.context.packageName}.fileprovider", f)
-                                        container.context.startActivity(Intent(Intent.ACTION_VIEW, uri).apply { setDataAndType(uri, "application/pdf"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK) })
+                                        container.context.startActivity(Intent.createChooser(Intent(Intent.ACTION_VIEW, uri).apply { setDataAndType(uri, "application/pdf"); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK) }, "Ouvrir le document").apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
                                     }
                                 }
                             } }
@@ -92,16 +93,46 @@ fun DocumentsScreen(container: AppContainer, onBack: () -> Unit) {
             onDismissRequest = { if (!submitting) showRequestDialog = false },
             title = { Text("Request a document") },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Documents disponibles", color = GSTextSecondary)
                     documentTypes.forEach { (code, label) ->
-                        TextButton(onClick = { viewModel.requestDocument(code); showRequestDialog = false }, enabled = !submitting) { Text(label, color = GSTextPrimary) }
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = GSSurface,
+                            modifier = Modifier.fillMaxWidth().clickable(enabled = !submitting) {
+                                viewModel.requestDocument(code)
+                                showRequestDialog = false
+                            }
+                        ) {
+                            Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(label, color = GSTextPrimary, fontWeight = FontWeight.SemiBold)
+                                    Text("Générée avec vos informations personnelles", color = GSTextSecondary, fontSize = 12.sp)
+                                }
+                                Text("Demander", color = GSBluePrimary, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                     }
                     if (approved.isNotEmpty()) {
-                        Spacer(Modifier.height(12.dp))
-                        Text("Documents approuvés par la direction", color = GSTextPrimary, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        Text("Documents approuvés par le Directeur", color = GSTextPrimary, fontWeight = FontWeight.SemiBold)
                         approved.forEach { doc ->
-                            TextButton(onClick = { viewModel.requestApprovedDocument(doc.idDocument); showRequestDialog = false }, enabled = !submitting) { Text(doc.nomDocument, color = GSTextPrimary) }
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = GSSurface,
+                                modifier = Modifier.fillMaxWidth().clickable(enabled = !submitting) {
+                                    viewModel.requestApprovedDocument(doc.idDocument)
+                                    showRequestDialog = false
+                                }
+                            ) {
+                                Column(Modifier.padding(14.dp)) {
+                                    Text(doc.nomDocument, color = GSTextPrimary, fontWeight = FontWeight.SemiBold)
+                                    Text("Document validé par la direction", color = GSTextSecondary, fontSize = 12.sp)
+                                }
+                            }
                         }
+                    } else {
+                        Text("Aucun autre document approuvé n'est disponible.", color = GSTextSecondary, fontSize = 12.sp)
                     }
                 }
             },

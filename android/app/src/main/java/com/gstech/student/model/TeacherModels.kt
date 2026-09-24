@@ -6,6 +6,7 @@ data class TeacherCourse(
     val code: String, // GSTech has no course-code field server-side; derived from the name.
     val room: String,
     val schedule: String,
+    val groupName: String? = null,
 )
 
 data class RosterStudent(

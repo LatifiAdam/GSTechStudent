@@ -3,6 +3,7 @@ package com.gstech.student.data
 import android.content.Context
 import com.gstech.student.data.local.TokenManager
 import com.gstech.student.data.remote.NetworkModule
+import com.gstech.student.data.repository.GradingRepository
 import com.gstech.student.data.repository.AttendanceRepository
 import com.gstech.student.data.repository.AdminManagementRepository
 import com.gstech.student.data.repository.AdminRepository
@@ -45,6 +46,8 @@ class AppContainer(context: Context) {
         network.scheduleApi,
         tokenManager
     )
+
+    val gradingRepository = GradingRepository(network.gradingApi)
 
     val attendanceRepository = AttendanceRepository(
         network.attendanceApi,
@@ -89,6 +92,7 @@ class AppContainer(context: Context) {
         network.coursesApi,
         network.documentRequestsApi,
         network.announcementsApi,
-        network.reportsApi
+        network.reportsApi,
+        network.establishmentsApi
     )
 }

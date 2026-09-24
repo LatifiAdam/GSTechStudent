@@ -1,5 +1,6 @@
 package com.gstech.student.ui.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.gstech.student.R
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -68,10 +71,18 @@ private fun HomeContent(
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier.size(34.dp).clip(RoundedCornerShape(10.dp)).background(GSBluePrimary),
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Filled.School, contentDescription = null, tint = androidx.compose.ui.graphics.Color.White, modifier = Modifier.size(20.dp)) }
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = GSSurface,
+                    modifier = Modifier.size(42.dp),
+                    tonalElevation = 2.dp,
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.logo_v5),
+                        contentDescription = "GSTech",
+                        modifier = Modifier.padding(3.dp)
+                    )
+                }
                 Spacer(Modifier.width(8.dp))
                 Column {
                     Text("GSTech", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -88,6 +99,11 @@ private fun HomeContent(
         Text(
             "ID: ${data.student.studentNumber ?: "—"} • ${data.student.promotion ?: ""}",
             color = GSTextSecondary,
+        )
+        Text(
+            "Groupe : ${data.student.groupName ?: "—"}",
+            color = GSTextSecondary,
+            fontSize = 13.sp,
         )
 
         Spacer(Modifier.height(16.dp))

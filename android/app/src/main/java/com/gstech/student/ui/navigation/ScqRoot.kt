@@ -18,12 +18,15 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.gstech.student.data.AppContainer
 import com.gstech.student.ui.admin.AddUserScreen
 import com.gstech.student.ui.admin.AdminEstablishmentsScreen
 import com.gstech.student.ui.admin.AdminHomeScreen
 import com.gstech.student.ui.admin.UsersListScreen
 import com.gstech.student.ui.shared.SettingsScreen
+import com.gstech.student.ui.admin.UserDetailScreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -73,16 +76,19 @@ fun ScqRoot(container: AppContainer, onSignedOut: () -> Unit) {
                 AdminHomeScreen(container, {}, "GSTech SCQ", false)
             }
             composable("scq/efp") {
-                AdminEstablishmentsScreen(container)
+                AdminEstablishmentsScreen(container) { id -> nav.navigate("scq/user/$id") }
             }
             composable("scq/directeurs") {
                 UsersListScreen(
-                    container, {}, { nav.navigate("scq/add") },
+                    container, { id -> nav.navigate("scq/user/$id") }, { nav.navigate("scq/add") },
                     showAdminUsers = false,
                     initialRole = "directeur",
                     allowedRoleFilters = listOf(com.gstech.student.model.Role.DIRECTEUR),
                     filterLabels = mapOf(com.gstech.student.model.Role.DIRECTEUR to "Directeur")
                 )
+            }
+            composable("scq/user/{id}", arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                UserDetailScreen(container, entry.arguments?.getString("id").orEmpty()) { nav.popBackStack() }
             }
             composable("scq/add") {
                 AddUserScreen(container, { nav.popBackStack() }, setOf("directeur"))

@@ -5,6 +5,7 @@ import com.gstech.student.data.remote.CoursesApi
 import com.gstech.student.data.remote.DocumentRequestsApi
 import com.gstech.student.data.remote.ReportsApi
 import com.gstech.student.data.remote.UsersApi
+import com.gstech.student.data.remote.EstablishmentsApi
 import com.gstech.student.data.remote.dto.*
 import com.gstech.student.model.*
 import kotlin.math.roundToInt
@@ -15,6 +16,7 @@ class AdminRepository(
     private val documentRequestsApi: DocumentRequestsApi,
     private val announcementsApi: AnnouncementsApi,
     private val reportsApi: ReportsApi,
+    private val establishmentsApi: EstablishmentsApi,
 ) {
 
     suspend fun getDirectorDashboard(): AdminDashboard {
@@ -40,7 +42,12 @@ class AdminRepository(
     }
 
     suspend fun getDashboardForRole(role: String?): AdminDashboard = when (role?.lowercase()) {
-        "srio" -> { val gs = usersApi.getAll("gestionnaire"); AdminDashboard(totalUsers=gs.size, totalAdmins=0, totalDirectors=0, totalGestionnaires=gs.size) }
+        "srio" -> {
+            val gs = usersApi.getAll("gestionnaire")
+            val ds = usersApi.getAll("directeur")
+            val efp = establishmentsApi.getAll()
+            AdminDashboard(totalUsers=gs.size, totalAdmins=0, totalDirectors=ds.size, totalGestionnaires=gs.size, totalEfp=efp.size)
+        }
         "scq" -> { val ds = usersApi.getAll("directeur"); AdminDashboard(totalUsers=ds.size, totalAdmins=0, totalDirectors=ds.size) }
         else -> getDashboard()
     }

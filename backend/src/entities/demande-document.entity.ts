@@ -18,6 +18,7 @@ export enum TypeDocument {
   RELEVE_NOTES = 'releve_notes',
   ATTESTATION_REUSSITE = 'attestation_reussite',
   BULLETIN = 'bulletin',
+  ATTESTATION_INSCRIPTION = 'attestation_inscription',
 }
 
 export enum StatutDemande {

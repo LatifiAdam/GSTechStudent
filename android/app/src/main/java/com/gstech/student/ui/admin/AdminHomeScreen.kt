@@ -13,7 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import com.gstech.student.R
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Campaign
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Menu
@@ -25,7 +25,6 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,12 +40,15 @@ import com.gstech.student.util.safeCall
 import androidx.compose.foundation.clickable
 import com.gstech.student.ui.components.AnimatedSection
 
+data class AdminQuickAction(val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val onClick: () -> Unit)
+
 @Composable
 fun AdminHomeScreen(
     container: AppContainer,
     onOpenSettings: () -> Unit,
     headerTitle: String = "GSTech Admin",
-    directorMode: Boolean = false
+    directorMode: Boolean = false,
+    quickActions: List<AdminQuickAction> = emptyList(),
 ) {
     var dashboardState by remember {
         mutableStateOf<UiState<AdminDashboard>>(
@@ -61,6 +63,7 @@ fun AdminHomeScreen(
     }
 
     var currentUserGreeting by remember { mutableStateOf<String?>(null) }
+    var detectedRole by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         currentUserGreeting = runCatching {
@@ -76,7 +79,7 @@ fun AdminHomeScreen(
         dashboardState = safeCall {
             if (directorMode) container.adminRepository.getDirectorDashboard()
             else {
-                val detectedRole = container.authRepository.currentRole()?.name?.lowercase() ?: when {
+                detectedRole = container.authRepository.currentRole()?.name?.lowercase() ?: when {
                     headerTitle.contains("SRIO", ignoreCase = true) -> "srio"
                     headerTitle.contains("SCQ", ignoreCase = true) -> "scq"
                     headerTitle.contains("Directeur", ignoreCase = true) -> "directeur"
@@ -156,10 +159,9 @@ fun AdminHomeScreen(
                             modifier = Modifier.size(52.dp)
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                                painter = painterResource(id = R.drawable.logo_v5),
                                 contentDescription = "GSTech",
                                 modifier = Modifier.padding(8.dp).clip(CircleShape),
-                                colorFilter = ColorFilter.tint(GSBluePrimary)
                             )
                         }
                         Spacer(Modifier.width(12.dp))
@@ -256,11 +258,14 @@ fun AdminHomeScreen(
                             StatCard(label = "TOTAL TEACHERS", value = "${state.data.totalTeachers}", modifier = Modifier.weight(1f))
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        StatCard(
-                            label = "TOTAL GESTIONNAIRES",
-                            value = "${state.data.totalGestionnaires}",
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        StatCard(label = "TOTAL GESTIONNAIRES", value = "${state.data.totalGestionnaires}", modifier = Modifier.fillMaxWidth())
+                    } else if (detectedRole == "srio") {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            StatCard(label = "TOTAL GESTIONNAIRES", value = "${state.data.totalGestionnaires}", modifier = Modifier.weight(1f))
+                            StatCard(label = "TOTAL EFP", value = "${state.data.totalEfp}", modifier = Modifier.weight(1f))
+                        }
+                        Spacer(Modifier.height(12.dp))
+                        StatCard(label = "TOTAL DIRECTEURS", value = "${state.data.totalDirectors}", modifier = Modifier.fillMaxWidth())
                     } else {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -270,13 +275,25 @@ fun AdminHomeScreen(
                             StatCard(label = "TOTAL ADMINS", value = "${state.data.totalAdmins}", modifier = Modifier.weight(1f))
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        StatCard(
-                            label = "TOTAL DIRECTORS",
-                            value = "${state.data.totalDirectors}",
-                            modifier = Modifier.fillMaxWidth()
-                        )
+                        StatCard(label = "TOTAL DIRECTORS", value = "${state.data.totalDirectors}", modifier = Modifier.fillMaxWidth())
                     }
 
+                    if (quickActions.isNotEmpty()) {
+                        Spacer(Modifier.height(24.dp))
+                        Text("Accès rapide", style = MaterialTheme.typography.titleMedium, color = GSTextPrimary, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(10.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            quickActions.take(4).forEach { action ->
+                                OutlinedButton(onClick = action.onClick, modifier = Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp)) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(action.icon, contentDescription = action.label, tint = GSBluePrimary, modifier = Modifier.size(19.dp))
+                                        Spacer(Modifier.height(4.dp))
+                                        Text(action.label, fontSize = 10.sp, maxLines = 1)
+                                    }
+                                }
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // ==================================================
