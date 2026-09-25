@@ -4,14 +4,17 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Grade
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.gstech.student.data.AppContainer
 import com.gstech.student.data.remote.dto.StudentGradeDto
 import com.gstech.student.ui.components.ErrorState
 import com.gstech.student.ui.components.GSCard
+import com.gstech.student.ui.components.GSScreenHeader
 import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
 
@@ -27,11 +30,27 @@ fun GradesScreen(container: AppContainer) {
             .onFailure { error = it.message ?: "Impossible de charger les notes." }
     }
 
-    Column(Modifier.fillMaxSize().background(GSBackground).padding(20.dp)) {
-        Text("Grades", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
-        Spacer(Modifier.height(8.dp))
-        Text("Moyenne = (somme des notes) / nombre de notes", color = GSTextSecondary)
+    Column(Modifier.fillMaxSize().background(GSBackground).padding(start = 20.dp, top = 20.dp, end = 20.dp)) {
+        GSScreenHeader(
+            title = "Notes",
+            subtitle = "Semestre 1 • 2026–2027",
+            icon = androidx.compose.material.icons.Icons.Filled.Grade,
+        )
         Spacer(Modifier.height(12.dp))
+        GSCard {
+            Text("Moyenne calculée", color = GSTextSecondary, fontSize = 11.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = grades?.let { list ->
+                    val values = list.flatMap { listOfNotNull(it.note1, it.note2, it.note3) }
+                    if (values.isEmpty()) "— / 20" else String.format("%.2f / 20", values.average())
+                } ?: "— / 20",
+                style = MaterialTheme.typography.headlineMedium,
+                color = GSBluePrimary,
+            )
+            Text("Notes disponibles dans le dossier académique", color = GSTextSecondary, fontSize = 11.sp)
+        }
+        Spacer(Modifier.height(14.dp))
         when {
             error != null -> ErrorState(error!!) {
                 error = null

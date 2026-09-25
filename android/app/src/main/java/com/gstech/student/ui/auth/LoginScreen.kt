@@ -55,7 +55,7 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
                     painter = painterResource(id = R.drawable.logo_v5),
                     contentDescription = "GSTech",
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
+                    contentScale = ContentScale.Fit
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -67,6 +67,7 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
         Surface(
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
             color = GSSurface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, GSDivider),
             shadowElevation = 8.dp,
         ) {
             Column(Modifier.padding(24.dp)) {
@@ -91,10 +92,10 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     focusedLabelColor = GSBluePrimary,
-                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedLabelColor = GSTextSecondary,
                                     disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     focusedBorderColor = GSBluePrimary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedBorderColor = GSDivider,
                                     disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                                     errorBorderColor = GSDanger,
                                     errorLabelColor = GSDanger,
@@ -125,10 +126,10 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
                                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                                     disabledTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     focusedLabelColor = GSBluePrimary,
-                                    unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedLabelColor = GSTextSecondary,
                                     disabledLabelColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     focusedBorderColor = GSBluePrimary,
-                                    unfocusedBorderColor = MaterialTheme.colorScheme.onSurface,
+                                    unfocusedBorderColor = GSDivider,
                                     disabledBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f),
                                     errorBorderColor = GSDanger,
                                     errorLabelColor = GSDanger,
@@ -155,7 +156,7 @@ fun LoginScreen(container: AppContainer, onLoggedIn: (Role) -> Unit, onForgotPas
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(26.dp),
+                    shape = RoundedCornerShape(14.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GSBluePrimary),
                     enabled = state !is UiState.Loading,
                 ) {

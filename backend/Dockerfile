@@ -9,7 +9,14 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+# Copy the complete backend source.
 COPY . .
+
+# The current project ZIP does not contain backend/assets.
+# Create the directory so the production stage can always copy it.
+# If the OFPPT template is added later, it will be included automatically.
+RUN mkdir -p /app/assets
+
 RUN npm run build
 
 # ============================================================

@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +25,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gstech.student.R
+import com.gstech.student.ui.components.GSHeader
+import com.gstech.student.ui.components.GSMetricCard
 import com.gstech.student.data.AppContainer
 import com.gstech.student.model.Role
 import com.gstech.student.ui.theme.*
@@ -33,15 +36,13 @@ fun GestionnaireHomeScreen(container: AppContainer, onGestionDocumentaire: () ->
     var userGreeting by remember { mutableStateOf<String?>(null) }
     var studentCount by remember { mutableStateOf(0) }
     var teacherCount by remember { mutableStateOf(0) }
+
     LaunchedEffect(Unit) {
         userGreeting = runCatching {
             val id = container.profileRepository.currentUserId()
-            container.profileRepository.rawUser(id).let { u ->
-                "Bonjour, ${u.nom}, ${u.prenom}"
-            }
+            container.profileRepository.rawUser(id).let { u -> "Bonjour, ${u.prenom.ifBlank { u.nom }}" }
         }.getOrNull()
     }
-
     LaunchedEffect("counts") {
         runCatching {
             studentCount = container.adminRepository.getUsersDto(Role.ETUDIANT).size
@@ -49,67 +50,37 @@ fun GestionnaireHomeScreen(container: AppContainer, onGestionDocumentaire: () ->
         }
     }
 
-    Column(
-        Modifier.fillMaxSize().background(GSBackground).verticalScroll(rememberScrollState()).padding(20.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = GSBluePrimary.copy(alpha=.10f), modifier = Modifier.size(52.dp)) {
-                Image(
-                    painter = painterResource(R.drawable.logo_v5),
-                    contentDescription = "GSTech",
-                    modifier = Modifier.padding(4.dp).clip(CircleShape)
-                )
-            }
-            Spacer(Modifier.width(12.dp))
-            Column {
-                Text(
-                    text = userGreeting ?: "Bonjour",
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = GSTextPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-                Text("GSTech • Gestionnaire", color = GSTextSecondary)
-            }
-        }
-
+    Column(Modifier.fillMaxSize().background(GSBackground).verticalScroll(rememberScrollState()).padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 18.dp)) {
+        GSHeader(
+            roleLabel = "GESTION DOCUMENTAIRE",
+            greeting = userGreeting ?: "Bonjour",
+            avatarText = userGreeting?.substringAfter(",")?.trim()?.take(2),
+        )
         Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            GestionnaireStatCard("Stagiaires", studentCount, Modifier.weight(1f))
-            GestionnaireStatCard("Formateurs", teacherCount, Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GSMetricCard("Stagiaires", studentCount.toString(), Modifier.weight(1f), "Dans votre EFP")
+            GSMetricCard("Formateurs", teacherCount.toString(), Modifier.weight(1f), "Équipe active")
         }
 
-        Spacer(Modifier.height(20.dp))
-        AnimatedVisibility(visible = true, enter = fadeIn(tween(350)) + slideInVertically(tween(400), initialOffsetY = { it / 10 })) {
-            Card(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = onGestionDocumentaire),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = GSSurface)
-            ) {
-                Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape=RoundedCornerShape(14.dp), color=GSBluePrimary.copy(alpha=.10f), modifier=Modifier.size(50.dp)) {
-                        Box(contentAlignment=Alignment.Center) { Icon(Icons.Filled.Description, null, tint=GSBluePrimary) }
-                    }
-                    Spacer(Modifier.width(14.dp))
-                    Column {
-                        Text("Gestion documentaire", style=MaterialTheme.typography.titleLarge, color=GSTextPrimary, fontWeight=FontWeight.Bold)
-                        Spacer(Modifier.height(4.dp))
-                        Text("Préparez les documents, suivez les demandes et gérez les groupes et les stagiaires de votre EFP.", color=GSTextSecondary)
-                    }
+        Spacer(Modifier.height(17.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth().clickable(onClick = onGestionDocumentaire),
+            shape = RoundedCornerShape(18.dp),
+            color = GSSurface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, GSDivider),
+        ) {
+            Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Surface(shape = RoundedCornerShape(13.dp), color = GSBluePrimary.copy(alpha = .10f), modifier = Modifier.size(48.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(Icons.Filled.Description, null, tint = GSBluePrimary) }
                 }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Gestion documentaire", style = MaterialTheme.typography.titleLarge, color = GSTextPrimary)
+                    Spacer(Modifier.height(3.dp))
+                    Text("Documents, demandes, groupes et stagiaires de votre EFP.", color = GSTextSecondary, fontSize = 12.sp)
+                }
+                Icon(Icons.AutoMirrored.Filled.ArrowForwardIos, null, tint = GSBluePrimary, modifier = Modifier.size(18.dp))
             }
-        }
-    }
-}
-
-
-@Composable
-private fun GestionnaireStatCard(label: String, value: Int, modifier: Modifier = Modifier) {
-    Card(modifier = modifier, shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = GSSurface)) {
-        Column(Modifier.padding(14.dp)) {
-            Text(value.toString(), style = MaterialTheme.typography.headlineSmall, color = GSBluePrimary, fontWeight = FontWeight.Bold)
-            Text(label, color = GSTextSecondary, fontSize = 12.sp)
         }
     }
 }

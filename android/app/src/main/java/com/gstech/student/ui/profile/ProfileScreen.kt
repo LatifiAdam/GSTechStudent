@@ -2,6 +2,7 @@ package com.gstech.student.ui.profile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gstech.student.data.AppContainer
 import com.gstech.student.ui.components.ErrorState
+import com.gstech.student.ui.components.GSScreenHeader
 import com.gstech.student.ui.components.GSCard
 import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
@@ -49,26 +51,12 @@ fun ProfileScreen(
         // HEADER
         // =========================
 
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(20.dp, 20.dp, 20.dp, 0.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-
-            Text(
-                "My Profile",
-                style = MaterialTheme.typography.headlineMedium,
-                color = GSTextPrimary
-            )
-
-            Icon(
-                Icons.Filled.Settings,
-                contentDescription = null,
-                tint = GSTextPrimary
-            )
-        }
+        GSScreenHeader(
+            title = "Mon profil",
+            subtitle = "Informations personnelles et préférences",
+            icon = Icons.Filled.Settings,
+            modifier = Modifier.padding(start = 20.dp, top = 20.dp, end = 20.dp),
+        )
 
         // =========================
         // CONTENT
@@ -130,7 +118,8 @@ fun ProfileScreen(
                                 Modifier
                                     .size(64.dp)
                                     .clip(CircleShape)
-                                    .background(GSDivider),
+                                    .background(GSBluePrimary.copy(alpha = 0.10f))
+                                    .border(1.dp, GSBluePrimary.copy(alpha = 0.08f), CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
 

@@ -3,6 +3,7 @@ package com.gstech.student.ui.home
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -67,60 +68,42 @@ private fun HomeContent(
             .fillMaxSize()
             .background(GSBackground)
             .verticalScroll(rememberScrollState())
-            .padding(20.dp),
+            .padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 18.dp),
     ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = GSSurface,
-                    modifier = Modifier.size(42.dp),
-                    tonalElevation = 2.dp,
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.logo_v5),
-                        contentDescription = "GSTech",
-                        modifier = Modifier.padding(3.dp)
-                    )
-                }
-                Spacer(Modifier.width(8.dp))
-                Column {
-                    Text("GSTech", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("SIS PLATFORM", color = GSTeal, fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-            Box(Modifier.size(44.dp).clip(CircleShape).background(GSDivider), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Person, contentDescription = "Avatar", tint = GSTextSecondary)
-            }
-        }
+        GSHeader(
+            roleLabel = "SIS PLATFORM",
+            greeting = "Bonjour, ${data.student.firstName}",
+            avatarText = data.student.firstName.take(2),
+        )
 
-        Spacer(Modifier.height(18.dp))
-        Text("Good Morning, ${data.student.firstName}", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
+        Spacer(Modifier.height(7.dp))
         Text(
-            "ID: ${data.student.studentNumber ?: "—"} • ${data.student.promotion ?: ""}",
+            "ID ${data.student.studentNumber ?: "—"} • ${data.student.promotion ?: ""}",
             color = GSTextSecondary,
+            fontSize = 12.sp,
         )
         Text(
             "Groupe : ${data.student.groupName ?: "—"}",
             color = GSTextSecondary,
-            fontSize = 13.sp,
+            fontSize = 12.sp,
         )
 
         Spacer(Modifier.height(16.dp))
         GSCard {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularStat(percent = data.summary.percentage, size = 76.dp)
-                Spacer(Modifier.width(16.dp))
-                Column {
+                CircularStat(percent = data.summary.percentage, size = 78.dp)
+                Spacer(Modifier.width(15.dp))
+                Column(Modifier.weight(1f)) {
                     Text(
-                        if (data.summary.percentage >= data.summary.minRequiredPercent) "Excellent Attendance" else "Attendance Needs Attention",
+                        if (data.summary.percentage >= data.summary.minRequiredPercent) "Assiduité excellente" else "Assiduité à surveiller",
                         style = MaterialTheme.typography.titleMedium,
                         color = GSTextPrimary,
                     )
+                    Spacer(Modifier.height(3.dp))
                     Text(
-                        "You have ${data.summary.absent} absence(s) this semester. Keep it up!",
+                        "${data.summary.absent} absence(s) • ${data.summary.late} retard(s) sur ${data.summary.present + data.summary.absent + data.summary.late} séance(s).",
                         color = GSTextSecondary,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                     )
                 }
             }
@@ -128,40 +111,45 @@ private fun HomeContent(
 
         Spacer(Modifier.height(16.dp))
         GSCard {
-            SectionTitle("Today's Classes") {
-                TextButton(onClick = onOpenSchedule) { Text("View All", color = GSTeal, fontWeight = FontWeight.SemiBold) }
+            SectionTitle("Cours du jour") {
+                TextButton(onClick = onOpenSchedule, contentPadding = PaddingValues(0.dp)) {
+                    Text("Voir tout", color = GSBluePrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                }
             }
             Spacer(Modifier.height(8.dp))
             if (data.todaysClasses.isEmpty()) {
-                Text("No classes scheduled for today.", color = GSTextSecondary, modifier = Modifier.padding(vertical = 8.dp))
+                Text("Aucun cours prévu aujourd'hui.", color = GSTextSecondary, modifier = Modifier.padding(vertical = 8.dp))
             } else {
                 data.todaysClasses.forEach { session ->
                     ClassRow(session) { onOpenCourse(session.courseId, session.courseName) }
-                    Spacer(Modifier.height(10.dp))
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
 
         data.latestNotification?.let { notif ->
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
             GSCard {
-                StatusPill(notif.category.name, GSDanger)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusPill(notif.category.name, GSDanger)
+                    Spacer(Modifier.width(8.dp))
+                    Text(notif.title, style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
+                }
                 Spacer(Modifier.height(6.dp))
-                Text(notif.title, style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
-                Text(notif.body, color = GSTextSecondary, fontSize = 13.sp, maxLines = 2)
+                Text(notif.body, color = GSTextSecondary, fontSize = 12.sp, maxLines = 3)
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            QuickAction("Absence", Icons.Filled.WarningAmber, onOpenAttendance)
-            QuickAction("Document", Icons.Filled.Description, onOpenDocuments)
-            QuickAction("Grades", Icons.Filled.StarBorder, onOpenGrades)
-            QuickAction("Schedule", Icons.Filled.CalendarMonth, onOpenSchedule)
+        Spacer(Modifier.height(16.dp))
+        SectionTitle("Accès rapide")
+        Spacer(Modifier.height(9.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QuickAction("Présence", Icons.Filled.EventAvailable, onOpenAttendance)
+            QuickAction("Documents", Icons.Filled.Description, onOpenDocuments)
+            QuickAction("Notes", Icons.Filled.Grade, onOpenGrades)
+            QuickAction("Planning", Icons.Filled.CalendarMonth, onOpenSchedule)
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(6.dp))
     }
 }
 
@@ -171,24 +159,33 @@ private fun ClassRow(session: ClassSession, onClick: () -> Unit) {
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
-            .background(GSBackground)
+            .background(GSSurfaceTint)
             .clickable(onClick = onClick)
-            .padding(12.dp),
+            .padding(11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .clip(RoundedCornerShape(10.dp))
-                .background(GSSurface)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+        Surface(
+            shape = RoundedCornerShape(10.dp),
+            color = GSSurface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, GSDivider),
         ) {
-            Text("${session.startTime} - ${session.endTime}", color = GSBluePrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+            Text(
+                "${session.startTime}\n${session.endTime}",
+                color = GSBluePrimary,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                lineHeight = 13.sp,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+            )
         }
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text(session.courseName, fontWeight = FontWeight.SemiBold, color = GSTextPrimary)
-            Text(session.room, color = GSTextSecondary, fontSize = 12.sp)
+        Spacer(Modifier.width(11.dp))
+        Column(Modifier.weight(1f)) {
+            Text(session.courseName, fontWeight = FontWeight.SemiBold, color = GSTextPrimary, fontSize = 13.sp)
+            Spacer(Modifier.height(2.dp))
+            Text(session.room, color = GSTextSecondary, fontSize = 11.sp)
         }
+        Text("Cours", color = GSBluePrimary, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -197,19 +194,23 @@ private fun RowScope.QuickAction(label: String, icon: ImageVector, onClick: () -
     Column(
         modifier = Modifier
             .weight(1f)
-            .clickable(onClick = onClick),
+            .clip(RoundedCornerShape(14.dp))
+            .background(GSSurface)
+            .border(1.dp, GSDivider, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
             Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(GSSurface),
+                .size(38.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(GSBluePrimary.copy(alpha = 0.10f)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = label, tint = GSBluePrimary)
+            Icon(icon, contentDescription = label, tint = GSBluePrimary, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 12.sp, color = GSTextPrimary)
+        Spacer(Modifier.height(5.dp))
+        Text(label, fontSize = 10.sp, color = GSTextPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }

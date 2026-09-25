@@ -2,6 +2,7 @@ package com.gstech.student.ui.teacher
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import com.gstech.student.data.AppContainer
 import com.gstech.student.model.TeacherCourse
 import com.gstech.student.ui.components.ErrorState
+import com.gstech.student.ui.components.GSHeader
+import com.gstech.student.ui.components.SectionTitle
 import com.gstech.student.ui.components.GSCard
 import com.gstech.student.ui.components.LoadingState
 import com.gstech.student.ui.theme.*
@@ -63,76 +66,70 @@ private fun TeacherHomeContent(
     onOpenAlerts: () -> Unit,
     onOpenCourses: () -> Unit,
 ) {
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(42.dp).clip(RoundedCornerShape(10.dp)).background(GSSurface), contentAlignment = Alignment.Center) {
-                    androidx.compose.foundation.Image(painterResource(R.drawable.logo_v5), contentDescription = "GSTech", modifier = Modifier.fillMaxSize().padding(3.dp))
-                }
-                Spacer(Modifier.width(8.dp))
-                Column {
-                    Text("GSTech", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    Text("FACULTY PLATFORM", color = GSTeal, fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
-            Box(Modifier.size(44.dp).clip(CircleShape).background(GSDivider), contentAlignment = Alignment.Center) {
-                Icon(Icons.Filled.Person, contentDescription = "Avatar", tint = GSTextSecondary)
-            }
-        }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 20.dp, top = 20.dp, end = 20.dp, bottom = 18.dp)) {
+        GSHeader(
+            roleLabel = "FACULTY PLATFORM",
+            greeting = "Bonjour, Prof. ${data.name.substringAfterLast(' ')}",
+            avatarText = data.name.trim().split(" ").lastOrNull()?.take(2),
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(data.department, color = GSTextSecondary, fontSize = 12.sp)
 
-        Spacer(Modifier.height(18.dp))
-        Text("Good Morning, Prof. ${data.name.substringAfterLast(' ')}", style = MaterialTheme.typography.headlineMedium, color = GSTextPrimary)
-        Text(data.department, color = GSTextSecondary)
-
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(15.dp))
         GSCard {
-            Row(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
-                    Text("Today's Lectures", color = GSTextSecondary, fontSize = 13.sp)
-                    Text("${data.courses.size} Classes", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                    Text("Cours du jour", color = GSTextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(3.dp))
+                    Text("${data.courses.size}", color = GSBluePrimary, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                    Text("séances", color = GSTextSecondary, fontSize = 11.sp)
                 }
+                VerticalDivider(modifier = Modifier.height(60.dp), color = GSDivider)
                 Column(Modifier.weight(1f)) {
-                    Text("Total Stagieres", color = GSTextSecondary, fontSize = 13.sp)
-                    Text("— Engaged", color = GSTeal, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                    Text("Stagiaires", color = GSTextSecondary, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.height(3.dp))
+                    Text("—", color = GSTeal, fontWeight = FontWeight.Bold, fontSize = 25.sp)
+                    Text("suivi actif", color = GSTextSecondary, fontSize = 11.sp)
                 }
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-        Text("Quick Actions", style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
-        Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            QuickAction("Take Attendance", Icons.Filled.CalendarMonth, onOpenAttendance)
-            QuickAction("Post Announcement", Icons.Filled.Campaign, onOpenAnnounce)
-            QuickAction("View Stats", Icons.Filled.BarChart, onOpenCourses)
+        Spacer(Modifier.height(17.dp))
+        SectionTitle("Accès rapide")
+        Spacer(Modifier.height(9.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            QuickAction("Présence", Icons.Filled.EventAvailable, onOpenAttendance)
+            QuickAction("Annonce", Icons.Filled.Campaign, onOpenAnnounce)
+            QuickAction("Mes cours", Icons.Filled.BarChart, onOpenCourses)
         }
 
         Spacer(Modifier.height(18.dp))
-        Text("Today's Lectures", style = MaterialTheme.typography.titleMedium, color = GSTextPrimary)
-        Spacer(Modifier.height(10.dp))
+        SectionTitle("Cours du jour")
+        Spacer(Modifier.height(9.dp))
         if (data.courses.isEmpty()) {
-            Text("No courses assigned yet.", color = GSTextSecondary)
+            Text("Aucun cours assigné pour le moment.", color = GSTextSecondary)
         } else {
             data.courses.forEach { course ->
                 LectureRow(course)
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(8.dp))
             }
         }
 
         if (data.pendingJustifications > 0) {
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(6.dp))
             Surface(
                 shape = RoundedCornerShape(14.dp),
-                color = GSWarning.copy(alpha = 0.15f),
+                color = GSWarning.copy(alpha = 0.10f),
+                border = androidx.compose.foundation.BorderStroke(1.dp, GSWarning.copy(alpha = 0.18f)),
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onOpenAlerts),
             ) {
-                Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = RoundedCornerShape(50), color = GSWarning) {
-                        Text("${data.pendingJustifications} PENDING", color = androidx.compose.ui.graphics.Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp))
+                Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Surface(shape = RoundedCornerShape(50), color = GSWarning.copy(alpha = 0.15f)) {
+                        Text("${data.pendingJustifications}", color = GSWarning, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp))
                     }
-                    Spacer(Modifier.width(10.dp))
-                    Text("Student absence justifications need your review.", color = GSTextPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = GSTextPrimary, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(9.dp))
+                    Text("Justification(s) à examiner.", color = GSTextPrimary, fontSize = 12.sp, modifier = Modifier.weight(1f))
+                    Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, tint = GSBluePrimary, modifier = Modifier.size(18.dp))
                 }
             }
         }
@@ -143,27 +140,41 @@ private fun TeacherHomeContent(
 @Composable
 private fun LectureRow(course: TeacherCourse) {
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(GSSurface).padding(12.dp),
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(com.gstech.student.ui.theme.GSSurfaceTint)
+            .border(1.dp, GSDivider, RoundedCornerShape(14.dp))
+            .padding(11.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Surface(shape = RoundedCornerShape(10.dp), color = GSBackground) {
-            Text(course.schedule.ifBlank { "—" }, color = GSBluePrimary, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp))
+        Surface(shape = RoundedCornerShape(10.dp), color = GSSurface, border = androidx.compose.foundation.BorderStroke(1.dp, GSDivider)) {
+            Text(course.schedule.ifBlank { "—" }, color = GSBluePrimary, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp))
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(11.dp))
         Column(Modifier.weight(1f)) {
-            Text(course.name, fontWeight = FontWeight.SemiBold, color = GSTextPrimary)
-            Text("${course.groupName ?: "Groupe —"} • ${course.code} • ${course.room}", color = GSTextSecondary, fontSize = 12.sp)
+            Text(course.name, fontWeight = FontWeight.SemiBold, color = GSTextPrimary, fontSize = 13.sp)
+            Text("${course.groupName ?: "Groupe —"} • ${course.code} • ${course.room}", color = GSTextSecondary, fontSize = 11.sp)
         }
     }
 }
 
 @Composable
 private fun RowScope.QuickAction(label: String, icon: ImageVector, onClick: () -> Unit) {
-    Column(modifier = Modifier.weight(1f).clickable(onClick = onClick), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(GSSurface), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = label, tint = GSBluePrimary)
+    Column(
+        modifier = Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(14.dp))
+            .background(GSSurface)
+            .border(1.dp, GSDivider, RoundedCornerShape(14.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(Modifier.size(38.dp).clip(RoundedCornerShape(11.dp)).background(GSBluePrimary.copy(alpha = 0.10f)), contentAlignment = Alignment.Center) {
+            Icon(icon, contentDescription = label, tint = GSBluePrimary, modifier = Modifier.size(20.dp))
         }
-        Spacer(Modifier.height(6.dp))
-        Text(label, fontSize = 11.sp, color = GSTextPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Spacer(Modifier.height(5.dp))
+        Text(label, fontSize = 10.sp, color = GSTextPrimary, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
