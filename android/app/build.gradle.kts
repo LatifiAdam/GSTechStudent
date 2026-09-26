@@ -4,7 +4,7 @@ plugins {
     id("com.google.gms.google-services")
 }
 
-val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://gstech-web.dns.army.com").get()
+val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://gstech-web.dns.army:3000/api/v1").get()
 
 android {
     namespace = "com.gstech.student"
