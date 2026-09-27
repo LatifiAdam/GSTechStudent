@@ -1,10 +1,9 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("com.google.gms.google-services")
 }
 
-val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://192.168.1.101:3000/api/v1").get()
+val apiBaseUrl = providers.gradleProperty("GSTech_API_BASE_URL").orElse("http://192.168.1.101:3000/api/v1/").get()
 
 android {
     namespace = "com.gstech.student"
@@ -63,7 +62,6 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
-
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4")
@@ -82,10 +80,6 @@ dependencies {
     implementation("com.squareup.moshi:moshi-kotlin:1.15.1")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-    // Firebase Cloud Messaging
-    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
-    implementation("com.google.firebase:firebase-messaging")
-    
     // Local token storage
 
     // Images (avatar in header)
